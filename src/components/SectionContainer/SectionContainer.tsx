@@ -63,7 +63,7 @@ function SectionContainer<T extends ElementType = "section">({
   children,
   ...rest
 }: SectionContainerProps<T>) {
-  const Comp = (as || "section") as ElementType;
+  const Comp: ElementType = as ?? "section";
 
   // Build classes without any helper libs
   const classes =
