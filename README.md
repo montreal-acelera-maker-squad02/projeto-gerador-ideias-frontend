@@ -1,6 +1,6 @@
 # Ideas Lab — Frontend
 
-Aplicação frontend construída com Vite, React e TypeScript, estilizada com Tailwind CSS.
+Aplicação frontend construída com Vite, React e TypeScript, estilizada com Tailwind CSS
 
 ## Tecnologias
 - React 19
