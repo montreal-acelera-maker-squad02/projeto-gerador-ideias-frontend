@@ -28,7 +28,7 @@ export const Navbar: React.FC = () => {
           </span>
         </div>
 
-        {/* MENU DE AÇÕES */}
+        { /* MENU DE AÇÕES */ }
         <div className="flex items-center gap-8">
           <a
             href="#login"
