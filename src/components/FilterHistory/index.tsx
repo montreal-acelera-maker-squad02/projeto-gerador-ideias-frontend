@@ -59,23 +59,22 @@ export default function FilterHistory({
   return (
     <div
       className={cn(
-        // Fixa no canto superior esquerdo
         'fixed top-6 left-6 z-10',
-        'p-6 rounded-2xl border flex-shrink-0',
-        darkMode ? 'bg-slate-800 border-slate-700 shadow-xl' : 'bg-white border-gray-300 shadow-lg',
+        'fh-container',
+        darkMode ? 'fh-container-dark' : 'fh-container-light',
         className,
       )}
     >
       {/* Header */}
-      <div className="flex items-center gap-2 mb-6">
-        <FilterIcon className={cn('w-5 h-5', darkMode ? 'text-white' : 'text-gray-900')} />
-        <h3 className={cn('font-semibold', darkMode ? 'text-white' : 'text-gray-900')}>Filtros</h3>
+      <div className="fh-header">
+        <FilterIcon className={cn('fh-icon', darkMode ? 'fh-icon-dark' : 'fh-icon-light')} />
+        <h3 className={cn('fh-title', darkMode ? 'fh-title-dark' : 'fh-title-light')}>Filtros</h3>
       </div>
 
-      <div className="space-y-4 min-w-[280px]">
+      <div className="fh-sections">
         {/* Categoria */}
         <div>
-          <label htmlFor={categoryId} className={cn('text-sm mb-2 block', darkMode ? 'text-gray-300' : 'text-gray-600')}>
+          <label htmlFor={categoryId} className={cn('fh-label', darkMode ? 'fh-label-dark' : 'fh-label-light')}>
             Categoria
           </label>
           <div className="relative">
@@ -83,13 +82,7 @@ export default function FilterHistory({
               id={categoryId}
               value={category}
               onChange={(e) => setCategory(e.target.value)}
-              className={cn(
-                'w-full appearance-none rounded-lg border px-3 py-2 text-sm outline-none cursor-pointer',
-                darkMode
-                  ? 'bg-slate-900 border-slate-600 text-white'
-                  : 'bg-gray-100 border-gray-300 text-gray-900',
-                'focus:ring-2 focus:ring-primary',
-              )}
+              className={cn('fh-select', darkMode ? 'fh-select-dark' : 'fh-select-light')}
             >
               {categories.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -101,10 +94,7 @@ export default function FilterHistory({
             <svg
               aria-hidden
               viewBox="0 0 24 24"
-              className={cn(
-                'pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2',
-                darkMode ? 'text-white' : 'text-gray-500',
-              )}
+              className={cn('fh-caret', darkMode ? 'fh-caret-dark' : 'fh-caret-light')}
             >
               <path d="M7 10l5 5 5-5H7z" fill="currentColor" />
             </svg>
@@ -113,23 +103,17 @@ export default function FilterHistory({
 
         {/* Data */}
         <div>
-          <label htmlFor={dateId} className={cn('text-sm mb-2 block', darkMode ? 'text-gray-300' : 'text-gray-600')}>
+          <label htmlFor={dateId} className={cn('fh-label', darkMode ? 'fh-label-dark' : 'fh-label-light')}>
             Data
           </label>
-          <div className="relative">
-            <CalendarIcon className={cn('absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none', darkMode ? 'text-gray-100' : 'text-gray-500')} />
+          <div className="fh-date-wrapper">
+            <CalendarIcon className={cn('fh-date-icon', darkMode ? 'fh-date-icon-dark' : 'fh-date-icon-light')} />
             <input
               id={dateId}
               type="date"
               value={date}
               onChange={(e) => setDate(e.target.value)}
-              className={cn(
-                'w-full pl-10 pr-4 py-2 rounded-lg border outline-none text-sm',
-                darkMode
-                  ? 'bg-slate-900 border-slate-600 text-white'
-                  : 'bg-gray-100 border-gray-300 text-gray-900',
-                'focus:ring-2 focus:ring-primary',
-              )}
+              className={cn('fh-input', darkMode ? 'fh-input-dark' : 'fh-input-light')}
               style={{ colorScheme: darkMode ? 'dark' : 'light' }}
             />
           </div>
@@ -145,12 +129,7 @@ export default function FilterHistory({
             }
             onChange?.({ category: '', date: '' })
           }}
-          className={cn(
-            'w-full mt-4 px-4 py-2 rounded-lg font-medium transition-all border cursor-pointer',
-            darkMode
-              ? 'bg-slate-700 hover:bg-slate-600 text-white border-slate-600'
-              : 'bg-gray-100 hover:bg-gray-200 text-gray-900 border-gray-300',
-          )}
+          className={cn('fh-button', darkMode ? 'fh-button-dark' : 'fh-button-light')}
         >
           Limpar filtros
         </button>
