@@ -1,5 +1,5 @@
 import { LandingPage } from "@/pages/LandingPage/LandingPage";
 
-export function App() {
+export default function App() {
   return <LandingPage />;
 }
