@@ -2,26 +2,26 @@ import React from "react";
 
 export const Hero: React.FC = () => {
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center text-center bg-background text-foreground px-8 pt-28">
+    <section className="min-h-screen flex flex-col items-center justify-center text-center bg-[#F9F9FB] text-[#1E1E1E] px-8 pt-24">
       {/* === TÍTULO === */}
-      <h1 className="text-4xl lg:text-6xl font-bold leading-tight mb-6">
+      <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-4">
         Transforme palavras em{" "}
-        <span className="text-gray-400 font-semibold">ideias brilhantes</span>
+        <span className="text-gray-700 font-bold">ideias brilhantes</span>
       </h1>
 
       {/* === DESCRIÇÃO === */}
-      <div className="text-lg text-gray-500 font-light mb-12 leading-relaxed max-w-2xl">
-        <p>Gere nomes de startups, slogans, produtos e posts usando IA.</p>
-        <p>Crie em minutos e experimente por si mesmo.</p>
-      </div>
+      <p className="text-lg text-gray-500 font-normal leading-relaxed max-w-2xl mb-12">
+        Gere nomes de startups, slogans, produtos e posts usando IA. <br />
+        Crie em minutos e experimente por si mesmo.
+      </p>
 
       {/* === INPUT + BOTÃO === */}
       <div className="flex items-center justify-center w-full">
-        <div className="relative w-full sm:max-w-2xl bg-[#F9FAFB] rounded-full border border-gray-200 shadow-sm">
+        <div className="relative w-full sm:max-w-2xl bg-white rounded-full border border-gray-200 shadow-sm">
           <input
             type="email"
             placeholder="Digite seu email"
-            className="w-full pl-8 pr-40 py-4 bg-transparent text-black text-base outline-none rounded-full placeholder:text-gray-500 caret-black"
+            className="w-full pl-8 pr-40 py-4 bg-transparent text-gray-800 text-base outline-none rounded-full placeholder:text-gray-400 caret-gray-700"
           />
           <button className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#335CFF] hover:bg-blue-700 text-white px-8 py-3 h-auto text-base font-semibold rounded-full shadow transition-all duration-200">
             Começar Agora
@@ -29,16 +29,15 @@ export const Hero: React.FC = () => {
         </div>
       </div>
 
-      {/* === MOCKUP ILUSTRATIVO AJUSTADO === */}
-      <div className="relative mt-20 w-full max-w-6xl">
+      {/* === MOCKUP ILUSTRATIVO === */}
+      <div className="relative mt-24 w-full max-w-6xl">
         <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-gray-200">
-          {/* CONTEÚDO DO CARD */}
           <div className="flex h-[480px]">
-            {/* SIDEBAR */}
-            <div className="w-52 bg-white border-r border-gray-200 p-6 flex flex-col justify-between">
+            {/* Sidebar */}
+            <div className="w-52 bg-white border-r border-gray-200 p-6">
               <div>
                 <div className="text-xs font-medium text-gray-500 uppercase tracking-wider mb-4">
-                  IDEAFlow
+                  IDEAFLOW
                 </div>
                 <div className="space-y-4">
                   {["Home", "Tasks", "Transactions", "Payments"].map(
@@ -59,7 +58,7 @@ export const Hero: React.FC = () => {
               </div>
             </div>
 
-            {/* CONTEÚDO PRINCIPAL */}
+            {/* Conteúdo principal */}
             <div className="flex-1 bg-[#F9FAFB] p-10">
               <div className="mb-6 flex justify-between items-center">
                 <input
@@ -70,7 +69,6 @@ export const Hero: React.FC = () => {
                 <p className="text-sm text-gray-500">Welcome, Jane</p>
               </div>
 
-              {/* BOTÕES */}
               <div className="flex flex-wrap gap-3 mb-8">
                 {["Send", "Request", "Transfer"].map((btn) => (
                   <button
@@ -82,7 +80,6 @@ export const Hero: React.FC = () => {
                 ))}
               </div>
 
-              {/* BALANCE INFO */}
               <div className="flex justify-between items-start mb-8">
                 <div>
                   <p className="text-xs text-gray-500 font-light mb-1">
@@ -98,12 +95,11 @@ export const Hero: React.FC = () => {
                 </div>
               </div>
 
-              {/* BOX DE EXEMPLO */}
               <div className="h-20 bg-white border border-gray-200 rounded-lg shadow-sm"></div>
             </div>
           </div>
 
-          {/* AVISO INFERIOR */}
+          {/* Rodapé preto */}
           <div className="bg-black text-white text-center px-6 py-3 text-xs font-light">
             IdeaFlow é uma empresa de tecnologia criativa, não um banco.
           </div>
