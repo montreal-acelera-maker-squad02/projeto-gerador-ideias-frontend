@@ -1,6 +1,35 @@
-import React from "react";
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
 
 export const Hero: React.FC = () => {
+  const [email, setEmail] = useState("");
+  const [error, setError] = useState("");
+  const navigate = useNavigate();
+
+  // ✅ Validação segura usando API nativa do HTML
+  const isValidEmail = (value: string) => {
+    const input = document.createElement("input");
+    input.type = "email";
+    input.value = value;
+    return input.checkValidity();
+  };
+
+  const handleStart = () => {
+    if (!email.trim()) {
+      setError("Por favor, digite um e-mail.");
+      return;
+    }
+
+    if (!isValidEmail(email)) {
+      setError("Digite um e-mail válido.");
+      return;
+    }
+
+    // 🔄 Limpa o erro e redireciona
+    setError("");
+    navigate(`/register?email=${encodeURIComponent(email)}`);
+  };
+
   return (
     <section className="min-h-screen flex flex-col items-center justify-center text-center bg-[#F9F9FB] text-[#1E1E1E] px-8 pt-24">
       {/* === TÍTULO === */}
@@ -16,17 +45,27 @@ export const Hero: React.FC = () => {
       </p>
 
       {/* === INPUT + BOTÃO === */}
-      <div className="flex items-center justify-center w-full">
+      <div className="flex flex-col items-center justify-center w-full">
         <div className="relative w-full sm:max-w-2xl bg-white rounded-full border border-gray-200 shadow-sm">
           <input
             type="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             placeholder="Digite seu email"
             className="w-full pl-8 pr-40 py-4 bg-transparent text-gray-800 text-base outline-none rounded-full placeholder:text-gray-400 caret-gray-700"
           />
-          <button className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#335CFF] hover:bg-blue-700 text-white px-8 py-3 h-auto text-base font-semibold rounded-full shadow transition-all duration-200">
+          <button
+            onClick={handleStart}
+            className="absolute right-1 top-1/2 transform -translate-y-1/2 bg-[#335CFF] hover:bg-blue-700 text-white px-8 py-3 h-auto text-base font-semibold rounded-full shadow transition-all duration-200"
+          >
             Começar Agora
           </button>
         </div>
+
+        {/* 🔴 Mensagem de erro */}
+        {error && (
+          <p className="text-red-500 text-sm font-medium mt-3">{error}</p>
+        )}
       </div>
 
       {/* === MOCKUP ILUSTRATIVO === */}
