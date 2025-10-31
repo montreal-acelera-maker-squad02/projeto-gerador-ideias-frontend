@@ -1,10 +1,10 @@
 import React from "react";
-
+import { Link } from "react-router-dom";
 export const Navbar: React.FC = () => {
   return (
     <header className="fixed top-0 left-0 w-full backdrop-blur-md bg-[#F9F9FB] shadow-[0_4px_20px_rgba(0,0,0,0.03)] z-50">
       <div className="max-w-7xl mx-auto flex justify-between items-center px-10 py-5">
-        {/* LOGO + TEXTO */}
+        {/* Logo + Texto */}
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 bg-gray-900 rounded-full flex items-center justify-center shadow-md">
             <svg
@@ -28,14 +28,14 @@ export const Navbar: React.FC = () => {
           </span>
         </div>
 
-        {/* MENU DE AÇÕES */}
+        {/* Menu de açoes */}
         <div className="flex items-center gap-8">
-          <a
-            href="#login"
-            className="text-gray-800 text-[15px] font-medium hover:text-gray-900 transition"
+          <Link
+            to="/login"
+            className="text-gray-800 font-medium text-[15px] hover:text-blue-600 transition"
           >
             Log In
-          </a>
+          </Link>
 
           <button className="bg-[#335CFF] text-white text-[15px] font-semibold px-7 py-2.5 rounded-full hover:bg-blue-700 transition">
             Começar Agora
