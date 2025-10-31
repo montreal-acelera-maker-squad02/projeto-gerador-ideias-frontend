@@ -15,7 +15,6 @@ export const LoginFooter: React.FC = () => {
         </Link>
       </p>
 
-      {/* Linha divisória */}
       <div className="w-full border-t border-gray-200 my-4"></div>
 
       {/* Link de voltar */}
