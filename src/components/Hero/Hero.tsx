@@ -6,15 +6,21 @@ export const Hero: React.FC = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  // ✅ Validação segura usando API nativa do HTML
+  const isValidEmail = (value: string) => {
+    const input = document.createElement("input");
+    input.type = "email";
+    input.value = value;
+    return input.checkValidity();
+  };
+
   const handleStart = () => {
     if (!email.trim()) {
       setError("Por favor, digite um e-mail.");
       return;
     }
 
-    // ✅ Validação simples de e-mail
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
+    if (!isValidEmail(email)) {
       setError("Digite um e-mail válido.");
       return;
     }
