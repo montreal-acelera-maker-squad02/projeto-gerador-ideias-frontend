@@ -28,7 +28,7 @@ describe('FilterHistory', () => {
   it('altera datas (controlado) e a UI reflete os valores', async () => {
     function Harness() {
       const [value, setValue] = useState({ category: '', startDate: '', endDate: '' })
-      return <FilterHistory value={value} onChange={setValue} />
+      return <FilterHistory value={value} onChange={(next) => setValue(prev => ({ ...prev, ...next }))} />
     }
     render(<Harness />)
     const start = screen.getByLabelText('Data Início') as HTMLInputElement
