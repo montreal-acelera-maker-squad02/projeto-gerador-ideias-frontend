@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
+import { apiFetch } from '@/lib/api'
+import { THEMES } from '@/constants/themes'
 
 export type IdeasFilters = {
   category?: string // UI label; mapeado para 'theme' na API
@@ -35,11 +37,20 @@ export function useIdeas(filters: IdeasFilters) {
     try {
       // Endpoint real do histórico com filtros opcionais
       const url = '/api/ideas/history' + (query ? `?${query}` : '')
-      const res = await fetch(url, { signal })
+      const res = await apiFetch(url, { signal })
       if (res.status === 404) { setData([]); return }
       if (!res.ok) throw new Error(`Erro ${res.status}`)
-      const json = (await res.json()) as Idea[]
-      setData(json)
+      const json = (await res.json()) as Array<Record<string, any>>
+      const parsed: Idea[] = json.map((it) => {
+        const sourceTs = (it as any).timestamp ?? (it as any).createdAt ?? (it as any).created_at
+        return {
+          ...it,
+          theme: normalizeThemeLabel(it.theme),
+          content: sanitizeQuotedText(it.content),
+          timestamp: parseTimestamp(sourceTs),
+        } as Idea
+      })
+      setData(parsed)
     } catch (e) {
       // Se for abort, ignore
       // @ts-expect-error narrow
@@ -65,4 +76,84 @@ export function useIdeas(filters: IdeasFilters) {
   }, [query, enabled])
 
   return { data, loading, error, refetch }
+}
+
+function parseTimestamp(input: unknown): Date {
+  // Already a Date
+  if (input instanceof Date) return input
+
+  // Epoch seconds/ms
+  if (typeof input === 'number') {
+    const ms = input > 1e12 ? input : input * 1000
+    return new Date(ms)
+  }
+
+  if (typeof input === 'string') {
+    let s = input.trim().replace(',', '.')
+
+    // Regex: YYYY-MM-DD [T ] hh:mm:ss(.fraction)? (Z|±hh:mm)?
+    const m = s.match(
+      /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}:\d{2})?$/
+    )
+    if (m) {
+      const [_, yy, MM, dd, hh, mm, ss, fracRaw, tz] = m
+      const y = Number(yy)
+      const mo = Number(MM) - 1
+      const d = Number(dd)
+      const H = hh ? Number(hh) : 0
+      const Mi = mm ? Number(mm) : 0
+      const S = ss ? Number(ss) : 0
+      const frac = fracRaw ? Number(String(fracRaw).slice(0, 3).padEnd(3, '0')) : 0
+
+      if (!tz || tz === '') {
+        // Sem timezone: interpretar como horário local
+        return new Date(y, mo, d, H, Mi, S, frac)
+      }
+
+      // Com timezone
+      // Base UTC
+      let utcMs = Date.UTC(y, mo, d, H, Mi, S, frac)
+      if (tz !== 'Z') {
+        const sign = tz.startsWith('-') ? -1 : 1
+        const [tzh, tzm] = tz.slice(1).split(':').map((v) => Number(v))
+        const offsetMin = sign * (tzh * 60 + tzm)
+        utcMs -= offsetMin * 60_000
+      }
+      return new Date(utcMs)
+    }
+
+    // Date only
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s + 'T00:00:00')
+
+    // Última tentativa usando o parser nativo
+    const dflt = new Date(s)
+    if (!isNaN(dflt.getTime())) return dflt
+  }
+
+  // Fallback seguro: retorna epoch 0 (evita Invalid Date no render)
+  return new Date(0)
+}
+
+function sanitizeQuotedText(text: unknown): string {
+  if (typeof text !== 'string') return String(text ?? '')
+  const t = text.trim()
+  const pairs: Array<[string, string]> = [["\"","\""], ['“','”'], ["'","'"]]
+  for (const [start, end] of pairs) {
+    if (t.startsWith(start) && t.endsWith(end) && t.length >= 2) {
+      return t.slice(1, -1)
+    }
+  }
+  return t
+}
+
+function normalizeThemeLabel(input: unknown): string {
+  if (typeof input !== 'string') return String(input ?? '')
+  const raw = input.trim().toLowerCase()
+  const found = THEMES.find((t) => t.value.toLowerCase() === raw || t.label.toLowerCase() === raw)
+  return found ? found.label : capitalizeFirst(raw)
+}
+
+function capitalizeFirst(s: string): string {
+  if (!s) return s
+  return s.charAt(0).toUpperCase() + s.slice(1)
 }

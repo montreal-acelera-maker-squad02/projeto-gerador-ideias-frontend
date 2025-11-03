@@ -57,7 +57,7 @@ test.describe('FilterHistory E2E', () => {
   })
 
   test('filtra por categoria, limpa filtros e mostra resultados', async ({ page }) => {
-    await page.goto('/')
+    await page.goto('/history')
 
     // Aguarda carregar ideias iniciais (tecnologia)
     await expect(page.getByText('Ideia Tecnologia 1')).toBeVisible()
@@ -71,4 +71,3 @@ test.describe('FilterHistory E2E', () => {
     await expect(page.getByText('Ideia Tecnologia 2')).toBeVisible()
   })
 })
-

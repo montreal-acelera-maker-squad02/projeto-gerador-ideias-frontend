@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { apiFetch } from '@/lib/api'
 
 export function useCategories() {
   const [data, setData] = useState<Array<{ label: string; value: string }> | null>(null)
@@ -13,7 +14,7 @@ export function useCategories() {
     setError(null)
     try {
       
-      const res = await fetch('/api/categories', { signal })
+      const res = await apiFetch('/api/categories', { signal })
       if (res.status === 404) { setData([]); return }
       if (!res.ok) throw new Error(`Erro ${res.status}`)
       const json = (await res.json()) as Array<{ label: string; value: string }>
