@@ -9,6 +9,14 @@ export default defineConfig(({ mode }) => {
   const backendUrl = env.VITE_BACKEND_URL || 'http://localhost:8080'
   return {
     plugins: [react(), tailwindcss()],
+    test: {
+      environment: 'jsdom',
+      setupFiles: 'src/setupTests.ts',
+      css: true,
+      globals: true,
+      include: ['src/**/*.{test,test.*}.{ts,tsx}', 'src/**/*.test.{ts,tsx}', 'src/**/*.test.tsx'],
+      exclude: ['e2e/**', 'playwright.config.{ts,js}', 'node_modules/**', 'dist/**'],
+    },
     server: {
       proxy: {
         '/api': {

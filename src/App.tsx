@@ -35,7 +35,9 @@ function App() {
   }, [])
 
   const filtered = ideas.filter((i) => {
-    const byCat = !filters.category || i.theme === filters.category
+    const byCat =
+      !filters.category ||
+      (typeof i.theme === 'string' && i.theme.toLowerCase() === filters.category.toLowerCase())
     const ts = new Date(i.timestamp).getTime()
     const startOk = !filters.startDate || ts >= new Date(`${filters.startDate}T00:00:00`).getTime()
     const endOk = !filters.endDate || ts <= new Date(`${filters.endDate}T23:59:59.999`).getTime()
