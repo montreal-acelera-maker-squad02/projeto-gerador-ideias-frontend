@@ -2,17 +2,6 @@ import { test, expect } from '@playwright/test'
 
 test.describe('FilterHistory E2E', () => {
   test.beforeEach(async ({ page }) => {
-    // Mock categories
-    await page.route('**/api/categories', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify([
-          { label: 'Tecnologia', value: 'tecnologia' },
-          { label: 'Estudos', value: 'estudos' },
-        ]),
-      })
-    })
 
     // Mock ideas by theme
     await page.route('**/api/ideas/history**', async (route) => {
