@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+﻿import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
 import { apiFetch } from '@/lib/api'
 import { THEMES } from '@/constants/themes'
@@ -35,7 +35,7 @@ export function useIdeas(filters: IdeasFilters) {
     setLoading(true)
     setError(null)
     try {
-      // Endpoint real do histórico com filtros opcionais
+      // Endpoint real do histÃ³rico com filtros opcionais
       const url = '/api/ideas/history' + (query ? `?${query}` : '')
       const res = await apiFetch(url, { signal })
       if (res.status === 404) { setData([]); return }
@@ -47,6 +47,7 @@ export function useIdeas(filters: IdeasFilters) {
           ...it,
           theme: normalizeThemeLabel(it.theme),
           content: sanitizeQuotedText(it.content),
+          context: sanitizeQuotedText(it.context),
           timestamp: parseTimestamp(sourceTs),
         } as Idea
       })
@@ -91,7 +92,7 @@ function parseTimestamp(input: unknown): Date {
   if (typeof input === 'string') {
     let s = input.trim().replace(',', '.')
 
-    // Regex: YYYY-MM-DD [T ] hh:mm:ss(.fraction)? (Z|±hh:mm)?
+    // Regex: YYYY-MM-DD [T ] hh:mm:ss(.fraction)? (Z|Â±hh:mm)?
     const m = s.match(
       /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}:\d{2})?$/
     )
@@ -106,7 +107,7 @@ function parseTimestamp(input: unknown): Date {
       const frac = fracRaw ? Number(String(fracRaw).slice(0, 3).padEnd(3, '0')) : 0
 
       if (!tz || tz === '') {
-        // Sem timezone: interpretar como horário local
+        // Sem timezone: interpretar como horÃ¡rio local
         return new Date(y, mo, d, H, Mi, S, frac)
       }
 
@@ -125,7 +126,7 @@ function parseTimestamp(input: unknown): Date {
     // Date only
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s + 'T00:00:00')
 
-    // Última tentativa usando o parser nativo
+    // Ãšltima tentativa usando o parser nativo
     const dflt = new Date(s)
     if (!isNaN(dflt.getTime())) return dflt
   }
@@ -137,7 +138,7 @@ function parseTimestamp(input: unknown): Date {
 function sanitizeQuotedText(text: unknown): string {
   if (typeof text !== 'string') return String(text ?? '')
   const t = text.trim()
-  const pairs: Array<[string, string]> = [["\"","\""], ['“','”'], ["'","'"]]
+  const pairs: Array<[string, string]> = [["\"","\""], ['â€œ','â€'], ["'","'"]]
   for (const [start, end] of pairs) {
     if (t.startsWith(start) && t.endsWith(end) && t.length >= 2) {
       return t.slice(1, -1)
@@ -157,3 +158,4 @@ function capitalizeFirst(s: string): string {
   if (!s) return s
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
+

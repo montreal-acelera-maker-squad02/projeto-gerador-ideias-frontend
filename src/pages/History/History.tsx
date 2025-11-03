@@ -1,0 +1,136 @@
+﻿import { useCallback, useEffect, useState } from 'react'
+import IdeaHistoryCard from '@/components/IdeiaCard/IdeaHistoryCard'
+import FilterHistory from '@/components/FilterHistory'
+import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
+import { useIdeas } from '@/hooks/useIdeas'
+import { THEMES } from '@/constants/themes'
+
+export default function HistoryPage() {
+  const [filters, setFilters] = useState<{ category: string; startDate: string; endDate: string }>({ category: '', startDate: '', endDate: '' })
+  const [page, setPage] = useState<number>(1)
+  const pageSize = 5
+
+  const [ideas, setIdeas] = useState<Idea[]>([])
+  const { data: ideasData, loading: ideasLoading } = useIdeas(filters)
+
+  useEffect(() => {
+    if (Array.isArray(ideasData)) {
+      setIdeas(ideasData)
+    }
+  }, [ideasData])
+
+  // reset para primeira página ao alterar filtros
+  useEffect(() => {
+    setPage(1)
+  }, [filters.category, filters.startDate, filters.endDate])
+
+  const categories = THEMES
+
+  const handleToggleFavorite = useCallback((id: string) => {
+    setIdeas((prev) => prev.map((i) => (i.id === id ? { ...i, isFavorite: !i.isFavorite } : i)))
+  }, [])
+
+  const handleDelete = useCallback((id: string) => {
+    setIdeas((prev) => prev.filter((i) => i.id !== id))
+  }, [])
+
+  const filtered = ideas.filter((i) => {
+    const byCat = !filters.category || (typeof i.theme === 'string' && i.theme.toLowerCase() === filters.category.toLowerCase())
+    const ts = new Date(i.timestamp).getTime()
+    const startOk = !filters.startDate || ts >= new Date(`${filters.startDate}T00:00:00`).getTime()
+    const endOk = !filters.endDate || ts <= new Date(`${filters.endDate}T23:59:59.999`).getTime()
+    return byCat && startOk && endOk
+  })
+
+  const total = filtered.length
+  const totalPages = Math.max(1, Math.ceil(total / pageSize))
+  const currentPage = Math.min(page, totalPages)
+  const start = (currentPage - 1) * pageSize
+  const paginated = filtered.slice(start, start + pageSize)
+
+  return (
+    <main className="min-h-screen p-6">
+      <div className="grid gap-6 md:grid-cols-[300px_1fr]">
+        <div>
+          <FilterHistory
+            fixed={false}
+            categories={[{ label: 'Todas', value: '' }, ...categories]}
+            value={filters}
+            onChange={(v) => setFilters({
+              category: v.category ?? '',
+              startDate: v.startDate ?? '',
+              endDate: v.endDate ?? ''
+            })}
+          />
+        </div>
+        <div className="flex flex-col gap-6">
+          {ideasLoading ? (
+            <div className="rounded-lg border border-gray-200 p-6 text-sm text-gray-600 h-32 flex items-center justify-center">
+              Carregando ideias...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-lg border border-gray-200 p-6 text-sm text-gray-600 h-32 flex items-center justify-center">
+              Nenhuma ideia encontrada.
+            </div>
+          ) : (
+            paginated.map((idea) => (
+              <IdeaHistoryCard
+                key={idea.id}
+                idea={idea}
+                onToggleFavorite={handleToggleFavorite}
+                onDelete={handleDelete}
+              />
+            ))
+          )}
+
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-center pt-2">
+              <nav aria-label="Paginação" className="inline-flex items-stretch rounded-lg border border-gray-300 bg-white overflow-hidden shadow-sm">
+                <button
+                  type="button"
+                  className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={() => setPage(1)}
+                  disabled={currentPage <= 1}
+                  aria-label="Primeira página"
+                >
+                  «
+                </button>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                  aria-label="Página anterior"
+                >
+                  ‹
+                </button>
+                <span className="px-4 py-1.5 text-sm font-semibold bg-slate-700 text-white border-l border-gray-300">
+                  {currentPage}
+                </span>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                  aria-label="Próxima página"
+                >
+                  ›
+                </button>
+                <button
+                  type="button"
+                  className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
+                  onClick={() => setPage(totalPages)}
+                  disabled={currentPage >= totalPages}
+                  aria-label="Última página"
+                >
+                  »
+                </button>
+              </nav>
+            </div>
+          )}
+        </div>
+      </div>
+    </main>
+  )
+}
+

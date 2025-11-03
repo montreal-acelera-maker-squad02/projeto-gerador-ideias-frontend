@@ -8,7 +8,7 @@ export const LoginFooter: React.FC = () => {
       <p className="text-sm text-gray-600">
         Não tem conta?{" "}
         <Link
-          to="/signup"
+          to="/register"
           className="text-[#7A3FFF] font-medium hover:underline transition"
         >
           Criar uma conta
