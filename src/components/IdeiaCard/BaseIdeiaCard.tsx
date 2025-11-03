@@ -36,7 +36,7 @@ export type BaseIdeaCardProps = {
   onToggleFavorite?: (id: string) => void;
   onCopy?: (text: string) => void;
   onShare?: (text: string) => void;
-  //onDelete?: (id: string) => void;
+  onDelete?: (id: string) => void;
   onClick?: () => void;
   className?: string;
 };
@@ -76,13 +76,13 @@ function FullActions({
   onCopy?: () => void | Promise<void>;
   onShare?: () => void | Promise<void>;
 }>) {
-  const btn = "p-2 rounded-lg transition-all-smooth hover:scale-110 hover:bg-gray-100";
+  const btn = "p-2 rounded-lg transition-all-smooth hover:scale-110 hover:bg-gray-100 cursor-pointer";
   return (
     <div className="flex items-center gap-2">
-      <button aria-label="Copiar" title="Copiar" className={cn("p-2 rounded-lg transition-all hover:scale-110 hover:bg-gray-100 text-gray-500 hover:text-gray-700")} onClick={onCopy}>
+      <button aria-label="Copiar" title="Copiar" className={cn("p-2 rounded-lg transition-all hover:scale-110 hover:bg-gray-100 text-gray-500 hover:text-gray-700 cursor-pointer")} onClick={onCopy}>
         <Copy className="w-5 h-5" />
       </button>
-      <button aria-label="Compartilhar" title="Compartilhar" className={cn("p-2 rounded-lg transition-all hover:scale-110 hover:bg-gray-100 text-gray-500 hover:text-gray-700")} onClick={onShare}>
+      <button aria-label="Compartilhar" title="Compartilhar" className={cn("p-2 rounded-lg transition-all hover:scale-110 hover:bg-gray-100 text-gray-500 hover:text-gray-700 cursor-pointer")} onClick={onShare}>
         <Share2 className="w-5 h-5" />
       </button>
       <button
@@ -124,16 +124,60 @@ export default memo(function BaseIdeaCard({
   onClick,
   className = "",
 }: BaseIdeaCardProps) {
+  // helpers de estilo e flags
   const pad = density === "compact" ? "p-4" : "p-8";
   const textSize = density === "compact" ? "text-base" : "text-2xl";
   const clamp = clampLines ? ` line-clamp-${clampLines}` : "";
   const surface = "rounded-2xl border-2 bg-white border-gray-300 shadow-md ";
+  const showMeta = metaMode === "full" || metaMode === "minimal";
 
-  const hasMeta = metaMode === "full" || metaMode === "minimal";
+  // meta node
+  const metaNode = showMeta ? (
+    <div className="flex flex-col gap-1">
+      {metaMode === "full" ? (
+        <>
+          <div className="text-sm font-light text-gray-600">Gerado em {formatDateBR(idea.timestamp)}</div>
+          {typeof idea.responseTime === "number" && (
+            <div className="text-xs font-light text-gray-500">Tempo de resposta: {idea.responseTime}ms</div>
+          )}
+        </>
+      ) : (
+        <div className="text-xs font-light text-gray-500">{formatDateOnlyBR(idea.timestamp)}</div>
+      )}
+    </div>
+  ) : (
+    <div />
+  );
+
+  // actions node (direita do footer) — preserva lógica atual
+  const actionsNode = footerRight
+    ? <div className="shrink-0">{footerRight}</div>
+    : actions !== "none" && actions === "full"
+    ? (
+        <FullActions
+          isFavorite={idea.isFavorite}
+          onFav={() => onToggleFavorite?.(idea.id)}
+          onCopy={async () => {
+            await navigator.clipboard.writeText(idea.content);
+            onCopy?.(idea.content);
+          }}
+          onShare={async () => {
+            if (navigator.share) {
+              await navigator.share({ title: "Ideia Gerada", text: idea.content });
+            } else {
+              await navigator.clipboard.writeText(idea.content);
+            }
+            onShare?.(idea.content);
+          }}
+        />
+      )
+    : null;
+
+  const shouldShowFooter = metaMode !== "none" || actions !== "none" || !!footerRight;
 
   return (
     <SectionContainer
-      className={cn("idea-card-scope group", surface, pad, "animate-scaleIn", className)}
+      className={cn("idea-card-scope group cursor-pointer", surface, pad, "animate-scaleIn", className)}
       onClick={onClick}
     >
       {/* Header: pills */}
@@ -151,59 +195,10 @@ export default memo(function BaseIdeaCard({
       </p>
 
       {/* Footer */}
-      {(metaMode !== "none" || actions !== "none" || footerRight) && (
-        <div 
-          className={cn(
-            "flex items-center justify-between",
-            showDivider ? "pt-6 border-t border-gray-200" : "pt-2"
-          )}
-        >
-          {hasMeta ? (
-            <div className="flex flex-col gap-1">
-              {metaMode === "full" ? (
-                <>
-                  <div className="text-sm font-light text-gray-600">
-                    Gerado em {formatDateBR(idea.timestamp)}
-                  </div>
-                  {typeof idea.responseTime === "number" && (
-                    <div className="text-xs font-light text-gray-500">
-                      Tempo de resposta: {idea.responseTime}ms
-                    </div>                
-                  )}
-                </>
-              ) : (
-                <div className="text-xs font-light text-gray-500">
-                  {formatDateOnlyBR(idea.timestamp)}
-                </div>
-              )}
-            </div>
-          ) : (
-            <div />
-          )}
-
-          {footerRight ? (
-            <div className="shrink-0">{footerRight}</div>
-          ) : actions !== "none" ? (
-            actions === "full" ? (
-              <FullActions
-                isFavorite={idea.isFavorite}
-                onFav={() => onToggleFavorite?.(idea.id)}
-                onCopy={async () => {
-                  await navigator.clipboard.writeText(idea.content);
-                  onCopy?.(idea.content);
-                }}
-                onShare={async () => {
-                  if (navigator.share) {
-                    await navigator.share({ title: "Ideia Gerada", text: idea.content });
-                  } else {
-                    await navigator.clipboard.writeText(idea.content);
-                  }
-                  onShare?.(idea.content);
-                }}
-              />
-
-            ) : null
-          ) : null}
+      {shouldShowFooter && (
+        <div className={ cn("flex items-center justify-between", showDivider ? "pt-6 border-t border-gray-200" : "pt-2") }>
+          {metaNode}
+          {actionsNode}
         </div>
       )}
     </SectionContainer>

@@ -1,4 +1,5 @@
-import { useEffect, useId, useState } from 'react'
+﻿import { useEffect, useId, useState } from 'react'
+import { THEMES } from '@/constants/themes'
 
 function cn(...classes: Array<string | false | null | undefined>) {
   return classes.filter(Boolean).join(' ')
@@ -8,58 +9,64 @@ type Option = { label: string; value: string }
 
 export type FilterHistoryProps = {
   darkMode?: boolean
+  fixed?: boolean
   categories?: Option[]
-  value?: { category?: string; date?: string }
-  onChange?: (next: { category?: string; date?: string }) => void
+  value?: { category?: string; startDate?: string; endDate?: string }
+  onChange?: (next: { category?: string; startDate?: string; endDate?: string }) => void
   onClear?: () => void
   className?: string
 }
 
 export default function FilterHistory({
   darkMode = false,
-  categories = [
-    { label: 'Todas', value: '' },
-    { label: 'Tecnologia', value: 'technology' },
-    { label: 'Educação', value: 'education' },
-    { label: 'Saúde', value: 'health' },
-  ],
+  fixed = false,
+  categories = [{ label: 'Todas', value: '' }, ...THEMES],
   value,
   onChange,
   onClear,
   className = '',
 }: FilterHistoryProps) {
   const categoryId = useId()
-  const dateId = useId()
+  const startId = useId()
+  const endId = useId()
 
   // Estado interno para modo não-controlado (fallback)
   const [internalCategory, setInternalCategory] = useState<string>('')
-  const [internalDate, setInternalDate] = useState<string>('')
+  const [internalStart, setInternalStart] = useState<string>('')
+  const [internalEnd, setInternalEnd] = useState<string>('')
 
   // Sincroniza quando componente é usado de forma controlada
   useEffect(() => {
     if (value) {
       setInternalCategory(value.category ?? '')
-      setInternalDate(value.date ?? '')
+      setInternalStart(value.startDate ?? '')
+      setInternalEnd(value.endDate ?? '')
     }
-  }, [value?.category, value?.date])
+  }, [value?.category, value?.startDate, value?.endDate])
 
   const category = value ? (value.category ?? '') : internalCategory
-  const date = value ? (value.date ?? '') : internalDate
+  const startDate = value ? (value.startDate ?? '') : internalStart
+  const endDate = value ? (value.endDate ?? '') : internalEnd
 
   function setCategory(v: string) {
     if (!value) setInternalCategory(v)
-    onChange?.({ category: v, date })
+    onChange?.({ category: v, startDate, endDate })
   }
 
-  function setDate(v: string) {
-    if (!value) setInternalDate(v)
-    onChange?.({ category, date: v })
+  function setStart(v: string) {
+    if (!value) setInternalStart(v)
+    onChange?.({ category, startDate: v, endDate })
+  }
+
+  function setEnd(v: string) {
+    if (!value) setInternalEnd(v)
+    onChange?.({ category, startDate, endDate: v })
   }
 
   return (
     <div
       className={cn(
-        'fixed top-6 left-6 z-10',
+        fixed && 'fixed top-6 left-6 z-10',
         'fh-container',
         darkMode ? 'fh-container-dark' : 'fh-container-light',
         className,
@@ -101,18 +108,36 @@ export default function FilterHistory({
           </div>
         </div>
 
-        {/* Data */}
+        {/* Data Início */}
         <div>
-          <label htmlFor={dateId} className={cn('fh-label', darkMode ? 'fh-label-dark' : 'fh-label-light')}>
-            Data
+          <label htmlFor={startId} className={cn('fh-label', darkMode ? 'fh-label-dark' : 'fh-label-light')}>
+            Data Início
           </label>
           <div className="fh-date-wrapper">
             <CalendarIcon className={cn('fh-date-icon', darkMode ? 'fh-date-icon-dark' : 'fh-date-icon-light')} />
             <input
-              id={dateId}
+              id={startId}
               type="date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              value={startDate}
+              onChange={(e) => setStart(e.target.value)}
+              className={cn('fh-input', darkMode ? 'fh-input-dark' : 'fh-input-light')}
+              style={{ colorScheme: darkMode ? 'dark' : 'light' }}
+            />
+          </div>
+        </div>
+
+        {/* Data Fim */}
+        <div>
+          <label htmlFor={endId} className={cn('fh-label', darkMode ? 'fh-label-dark' : 'fh-label-light')}>
+            Data Fim
+          </label>
+          <div className="fh-date-wrapper">
+            <CalendarIcon className={cn('fh-date-icon', darkMode ? 'fh-date-icon-dark' : 'fh-date-icon-light')} />
+            <input
+              id={endId}
+              type="date"
+              value={endDate}
+              onChange={(e) => setEnd(e.target.value)}
               className={cn('fh-input', darkMode ? 'fh-input-dark' : 'fh-input-light')}
               style={{ colorScheme: darkMode ? 'dark' : 'light' }}
             />
@@ -125,9 +150,10 @@ export default function FilterHistory({
             onClear?.()
             if (!value) {
               setInternalCategory('')
-              setInternalDate('')
+              setInternalStart('')
+              setInternalEnd('')
             }
-            onChange?.({ category: '', date: '' })
+            onChange?.({ category: '', startDate: '', endDate: '' })
           }}
           className={cn('fh-button', darkMode ? 'fh-button-dark' : 'fh-button-light')}
         >
@@ -157,3 +183,4 @@ function FilterIcon({ className = '' }: { className?: string }) {
     </svg>
   )
 }
+

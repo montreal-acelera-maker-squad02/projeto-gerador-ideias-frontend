@@ -21,7 +21,7 @@ export default function IdeaHistoryCard(
   const headerRight = (
     <button
       aria-label="Favoritar"
-      className="opacity-0 group-hover:opacity-100 transition-all-smooth p-1 hover:scale-110"
+      className="opacity-0 group-hover:opacity-100 transition-all-smooth p-1 hover:scale-110 cursor-pointer"
       title={props.idea.isFavorite ? "Desfavoritar" : "Favoritar"}
       onClick={(e) => {
         e.stopPropagation();
@@ -42,7 +42,7 @@ export default function IdeaHistoryCard(
   const footerRight = (
     <button
       aria-label="Excluir"
-      className="opacity-0 group-hover:opacity-100 transition-all-smooth p-1 text-red-600 hover:bg-red-100/50 rounded hover:scale-110"
+      className="opacity-0 group-hover:opacity-100 transition-all-smooth p-1 text-red-600 hover:bg-red-100/50 rounded hover:scale-110 cursor-pointer"
       title="Excluir"
       onClick={(e) => {
         e.stopPropagation();
