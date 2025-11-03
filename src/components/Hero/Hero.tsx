@@ -6,7 +6,6 @@ export const Hero: React.FC = () => {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
-  // ✅ Validação segura usando API nativa do HTML
   const isValidEmail = (value: string) => {
     const input = document.createElement("input");
     input.type = "email";
@@ -25,7 +24,6 @@ export const Hero: React.FC = () => {
       return;
     }
 
-    // 🔄 Limpa o erro e redireciona
     setError("");
     navigate(`/register?email=${encodeURIComponent(email)}`);
   };
@@ -62,13 +60,11 @@ export const Hero: React.FC = () => {
           </button>
         </div>
 
-        {/* 🔴 Mensagem de erro */}
         {error && (
           <p className="text-red-500 text-sm font-medium mt-3">{error}</p>
         )}
       </div>
 
-      {/* === MOCKUP ILUSTRATIVO === */}
       <div className="relative mt-24 w-full max-w-6xl">
         <div className="bg-white rounded-3xl overflow-hidden shadow-2xl border border-gray-200">
           <div className="flex h-[480px]">
