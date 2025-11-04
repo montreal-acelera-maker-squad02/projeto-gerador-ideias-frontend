@@ -21,11 +21,30 @@ export const RegisterForm: React.FC = () => {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [validations, setValidations] = useState({
+    hasUpper: false,
+    hasLower: false,
+    hasNumber: false,
+    hasSpecial: false,
+    hasLength: false,
+  });
+
   useEffect(() => {
     if (emailFromURL) {
       setForm((prev) => ({ ...prev, email: emailFromURL }));
     }
   }, [emailFromURL]);
+
+  useEffect(() => {
+    const { password } = form;
+    setValidations({
+      hasUpper: /[A-Z]/.test(password),
+      hasLower: /[a-z]/.test(password),
+      hasNumber: /\d/.test(password),
+      hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+      hasLength: password.length >= 8 && password.length <= 20,
+    });
+  }, [form.password]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -83,6 +102,37 @@ export const RegisterForm: React.FC = () => {
       setLoading(false);
     }
   };
+
+  const renderRule = (valid: boolean, text: string) => (
+    <li
+      className={`flex items-center gap-2 text-sm transition-all duration-200 ${
+        valid ? "text-green-600" : "text-red-500"
+      }`}
+    >
+      {valid ? (
+        <svg
+          className="w-4 h-4 shrink-0"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+        </svg>
+      ) : (
+        <svg
+          className="w-4 h-4 shrink-0"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          viewBox="0 0 24 24"
+        >
+          <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+        </svg>
+      )}
+      {text}
+    </li>
+  );
 
   return (
     <section className="w-full flex flex-col items-center justify-center py-28 px-6">
@@ -144,7 +194,7 @@ export const RegisterForm: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-12.5 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              className="absolute right-3 top-12 -translate-y-1/2 text-gray-500 hover:text-gray-700"
             >
               {showPassword ? (
                 <svg
@@ -189,10 +239,14 @@ export const RegisterForm: React.FC = () => {
                 </svg>
               )}
             </button>
-            <p className="text-xs text-gray-500 mt-1">
-              A senha deve conter pelo menos 8 caracteres, incluindo letra
-              maiúscula, minúscula, número e caractere especial.
-            </p>
+
+            <ul className="mt-3 space-y-1 pl-1">
+              {renderRule(validations.hasUpper, "1 letra maiúscula (A–Z)")}
+              {renderRule(validations.hasLower, "1 letra minúscula (a–z)")}
+              {renderRule(validations.hasNumber, "1 número (0–9)")}
+              {renderRule(validations.hasSpecial, "1 caractere especial (@, #, $, etc.)")}
+              {renderRule(validations.hasLength, "Tamanho entre 8 e 20 caracteres")}
+            </ul>
           </div>
 
           {/* Confirmar senha */}
@@ -212,7 +266,7 @@ export const RegisterForm: React.FC = () => {
             <button
               type="button"
               onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-12.5 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+              className="absolute right-3 top-12 -translate-y-1/2 text-gray-500 hover:text-gray-700"
             >
               {showConfirmPassword ? (
                 <svg
@@ -294,7 +348,7 @@ export const RegisterForm: React.FC = () => {
             onClick={() => navigate("/")}
             className="text-gray-500 hover:text-gray-700 text-sm"
           >
-            ← Voltar à página inicial
+             Voltar à página inicial
           </button>
         </div>
       </div>
