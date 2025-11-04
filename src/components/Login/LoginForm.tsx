@@ -2,10 +2,13 @@
 import { useNavigate } from "react-router-dom";
 import { authService } from "@/services/authService";
 import { setAuthToken } from "@/lib/api";
+import { TextField } from "@/components/common/TextField";
+import { PasswordToggle } from "@/components/common/PasswordToggle";
 
 export const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -15,16 +18,19 @@ export const LoginForm: React.FC = () => {
 
     try {
       const data = await authService.login(email, password);
+
       if (data?.token) {
         setAuthToken(data.token);
         localStorage.setItem("token", data.token);
       }
+
       if (data?.user) {
         localStorage.setItem("user", JSON.stringify(data.user));
       }
+
       navigate("/history");
     } catch (error: any) {
-      console.error("Erro ao logar:", (error as any)?.response?.data || (error as any)?.message);
+      console.error("Erro ao logar:", error?.response?.data || error?.message);
       alert("Falha ao fazer login. Verifique suas credenciais.");
     } finally {
       setLoading(false);
@@ -32,18 +38,45 @@ export const LoginForm: React.FC = () => {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6"> 
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-        <input type="email" placeholder="seu@email.com" value={email} onChange={(e) => setEmail(e.target.value)} className="w-full px-4 py-3 bg-[#eef3ff] border border-transparent rounded-lg text-gray-700 focus:ring-2 focus:ring-[#335CFF] focus:bg-white focus:border-[#335CFF] outline-none transition-all" />
+    <form onSubmit={handleSubmit} className="space-y-6">
+      {/* Campo de email */}
+      <TextField
+        label="Email"
+        type="email"
+        name="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="seu@email.com"
+      />
+
+      {/* Campo de senha */}
+      <div className="relative">
+        <TextField
+          label="Senha"
+          type={showPassword ? "text" : "password"}
+          name="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          placeholder="********"
+        />
+        <PasswordToggle
+          visible={showPassword}
+          onToggle={() => setShowPassword(!showPassword)}
+          className="top-12"
+        />
       </div>
-      <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-        <input type="password" placeholder="********" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full px-4 py-3 bg-[#eef3ff] border border-transparent rounded-lg text-gray-700 focus:ring-2 focus:ring-[#335CFF] focus:bg-white focus:border-[#335CFF] outline-none transition-all" />
-      </div>
-      <button type="submit" disabled={loading} className="w-full py-2.5 rounded-lg font-semibold text-white bg-linear-to-r from-[#9C6FFF] to-[#335CFF] shadow-md hover:shadow-lg transform transition-all hover:-translate-y-0.5 disabled:opacity-60">{loading ? "Entrando..." : "Fazer Login"}</button>
+
+      {/* Botão de login */}
+      <button
+        type="submit"
+        disabled={loading}
+        className="w-full py-2.5 rounded-lg font-semibold text-white 
+                   bg-linear-to-r from-[#9C6FFF] to-[#335CFF]
+                   shadow-md hover:shadow-lg transform transition-all 
+                   hover:-translate-y-0.5 disabled:opacity-60"
+      >
+        {loading ? "Entrando..." : "Fazer Login"}
+      </button>
     </form>
   );
 };
-
-
