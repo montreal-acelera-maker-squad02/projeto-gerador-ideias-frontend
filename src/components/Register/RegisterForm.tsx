@@ -16,6 +16,8 @@ export const RegisterForm: React.FC = () => {
     confirmPassword: "",
   });
 
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -61,10 +63,10 @@ export const RegisterForm: React.FC = () => {
         form.confirmPassword
       );
 
-      console.log("✅ Usuário registrado com sucesso:", data);
+      console.log(" Usuário registrado com sucesso:", data);
       navigate("/login", { replace: true });
     } catch (error: any) {
-      console.error(" Erro ao cadastrar:", error.response);
+      console.error("Erro ao cadastrar:", error.response);
 
       if (error.response?.status === 409) {
         setError("Este e-mail já está em uso.");
@@ -126,19 +128,67 @@ export const RegisterForm: React.FC = () => {
           </div>
 
           {/* Senha */}
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Senha
             </label>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               name="password"
               value={form.password}
               onChange={handleChange}
               placeholder="••••••••"
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none transition"
+              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none transition"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-12.5 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showPassword ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5
+                       c4.478 0 8.268 2.943 9.542 7
+                       -1.274 4.057-5.064 7-9.542 7
+                       -4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13.875 18.825A10.05 10.05 0 0112 19
+                       c-4.478 0-8.268-2.943-9.542-7
+                       a9.957 9.957 0 013.574-4.568M9.88 9.88
+                       A3 3 0 0114.12 14.12M6.1 6.1l11.8 11.8"
+                  />
+                </svg>
+              )}
+            </button>
             <p className="text-xs text-gray-500 mt-1">
               A senha deve conter pelo menos 8 caracteres, incluindo letra
               maiúscula, minúscula, número e caractere especial.
@@ -146,31 +196,83 @@ export const RegisterForm: React.FC = () => {
           </div>
 
           {/* Confirmar senha */}
-          <div>
+          <div className="relative">
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Confirmar Senha
             </label>
             <input
-              type="password"
+              type={showConfirmPassword ? "text" : "password"}
               name="confirmPassword"
               value={form.confirmPassword}
               onChange={handleChange}
               placeholder="Confirme sua senha"
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none transition"
+              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none transition"
               required
             />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-12.5 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              {showConfirmPassword ? (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5
+                       c4.478 0 8.268 2.943 9.542 7
+                       -1.274 4.057-5.064 7-9.542 7
+                       -4.477 0-8.268-2.943-9.542-7z"
+                  />
+                </svg>
+              ) : (
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="w-5 h-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={1.8}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M13.875 18.825A10.05 10.05 0 0112 19
+                       c-4.478 0-8.268-2.943-9.542-7
+                       a9.957 9.957 0 013.574-4.568M9.88 9.88
+                       A3 3 0 0114.12 14.12M6.1 6.1l11.8 11.8"
+                  />
+                </svg>
+              )}
+            </button>
           </div>
 
           {/* Mensagem de erro */}
           {error && (
-            <p className="text-red-500 text-sm text-center font-medium">{error}</p>
+            <p className="text-red-500 text-sm text-center font-medium">
+              {error}
+            </p>
           )}
 
           {/* Botão */}
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 mt-2 rounded-md font-semibold text-white bg-linear-to-r from-[#9C6FFF] to-[#335CFF] shadow-[0_4px_12px_rgba(51,92,255,0.3)] hover:shadow-[0_8px_20px_rgba(51,92,255,0.45)] transition-all duration-300 disabled:opacity-60"
+            className="w-full py-2 mt-2 rounded-md font-semibold text-white bg-linear-to-r from-[#9C6FFF] to-[#335CFF]
+                       shadow-[0_4px_12px_rgba(51,92,255,0.3)] hover:shadow-[0_8px_20px_rgba(51,92,255,0.45)]
+                       transition-all duration-300 disabled:opacity-60"
           >
             {loading ? "Cadastrando..." : "Criar Conta"}
           </button>
