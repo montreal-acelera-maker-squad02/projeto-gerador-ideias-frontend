@@ -25,10 +25,10 @@ export type Idea = {
 };
 
 export type DashboardPageProps = {
-  ideas: Idea[];
+  ideas?: Idea[];
 };
 
-export const DashboardPage: React.FC<DashboardPageProps> = ({ ideas }) => {
+export const DashboardPage: React.FC<DashboardPageProps> = ({ ideas = [] }) => {
   const favoriteIdeas = useMemo(
     () => ideas.filter((i) => i.isFavorite),
     [ideas]
@@ -118,3 +118,5 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ ideas }) => {
     </div>
   );
 };
+
+export default DashboardPage;
