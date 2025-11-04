@@ -41,7 +41,8 @@ export const RegisterForm: React.FC = () => {
       hasUpper: /[A-Z]/.test(password),
       hasLower: /[a-z]/.test(password),
       hasNumber: /\d/.test(password),
-      hasSpecial: /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password),
+      // ✅ Corrigido: removidos escapes desnecessários
+      hasSpecial: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
       hasLength: password.length >= 8 && password.length <= 20,
     });
   }, [form.password]);
@@ -50,9 +51,10 @@ export const RegisterForm: React.FC = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
+  // ✅ Corrigido também aqui no regex principal
   const isStrongPassword = (password: string) => {
     const regex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]).{8,}$/;
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
     return regex.test(password);
   };
 
@@ -82,7 +84,7 @@ export const RegisterForm: React.FC = () => {
         form.confirmPassword
       );
 
-      console.log(" Usuário registrado com sucesso:", data);
+      console.log("✅ Usuário registrado com sucesso:", data);
       navigate("/login", { replace: true });
     } catch (error: any) {
       console.error("Erro ao cadastrar:", error.response);
@@ -348,7 +350,7 @@ export const RegisterForm: React.FC = () => {
             onClick={() => navigate("/")}
             className="text-gray-500 hover:text-gray-700 text-sm"
           >
-             Voltar à página inicial
+            ← Voltar à página inicial
           </button>
         </div>
       </div>
