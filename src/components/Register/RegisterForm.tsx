@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
 import { authService } from "@/services/authService";
+import { TextField } from "@/components/common/TextField";
+import { PasswordToggle } from "@/components/common/PasswordToggle";
 
 export const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
@@ -41,7 +43,6 @@ export const RegisterForm: React.FC = () => {
       hasUpper: /[A-Z]/.test(password),
       hasLower: /[a-z]/.test(password),
       hasNumber: /\d/.test(password),
-      // ✅ Corrigido: removidos escapes desnecessários
       hasSpecial: /[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]/.test(password),
       hasLength: password.length >= 8 && password.length <= 20,
     });
@@ -51,7 +52,6 @@ export const RegisterForm: React.FC = () => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
 
-  // ✅ Corrigido também aqui no regex principal
   const isStrongPassword = (password: string) => {
     const regex =
       /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=[\]{};':"\\|,.<>/?]).{8,}$/;
@@ -84,7 +84,7 @@ export const RegisterForm: React.FC = () => {
         form.confirmPassword
       );
 
-      console.log("✅ Usuário registrado com sucesso:", data);
+      console.log(" Usuário registrado com sucesso:", data);
       navigate("/login", { replace: true });
     } catch (error: any) {
       console.error("Erro ao cadastrar:", error.response);
@@ -148,100 +148,39 @@ export const RegisterForm: React.FC = () => {
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-6">
           {/* Nome */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Nome Completo
-            </label>
-            <input
-              type="text"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              placeholder="Seu nome"
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none transition"
-              required
-            />
-          </div>
+          <TextField
+            label="Nome Completo"
+            name="name"
+            value={form.name}
+            onChange={handleChange}
+            placeholder="Seu nome"
+          />
 
           {/* Email */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Email
-            </label>
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              placeholder="Seu email"
-              className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none transition"
-              required
-            />
-          </div>
+          <TextField
+            label="Email"
+            type="email"
+            name="email"
+            value={form.email}
+            onChange={handleChange}
+            placeholder="Seu email"
+          />
 
           {/* Senha */}
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Senha
-            </label>
-            <input
+            <TextField
+              label="Senha"
               type={showPassword ? "text" : "password"}
               name="password"
               value={form.password}
               onChange={handleChange}
               placeholder="••••••••"
-              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none transition"
-              required
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-12 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-            >
-              {showPassword ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5
-                       c4.478 0 8.268 2.943 9.542 7
-                       -1.274 4.057-5.064 7-9.542 7
-                       -4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13.875 18.825A10.05 10.05 0 0112 19
-                       c-4.478 0-8.268-2.943-9.542-7
-                       a9.957 9.957 0 013.574-4.568M9.88 9.88
-                       A3 3 0 0114.12 14.12M6.1 6.1l11.8 11.8"
-                  />
-                </svg>
-              )}
-            </button>
-
+            <PasswordToggle
+              visible={showPassword}
+              onToggle={() => setShowPassword(!showPassword)}
+              className="top-12"
+            />
             <ul className="mt-3 space-y-1 pl-1">
               {renderRule(validations.hasUpper, "1 letra maiúscula (A–Z)")}
               {renderRule(validations.hasLower, "1 letra minúscula (a–z)")}
@@ -253,73 +192,24 @@ export const RegisterForm: React.FC = () => {
 
           {/* Confirmar senha */}
           <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Confirmar Senha
-            </label>
-            <input
+            <TextField
+              label="Confirmar Senha"
               type={showConfirmPassword ? "text" : "password"}
               name="confirmPassword"
               value={form.confirmPassword}
               onChange={handleChange}
               placeholder="Confirme sua senha"
-              className="w-full px-4 py-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none transition"
-              required
             />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-12 -translate-y-1/2 text-gray-500 hover:text-gray-700"
-            >
-              {showConfirmPassword ? (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                  />
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M2.458 12C3.732 7.943 7.523 5 12 5
-                       c4.478 0 8.268 2.943 9.542 7
-                       -1.274 4.057-5.064 7-9.542 7
-                       -4.477 0-8.268-2.943-9.542-7z"
-                  />
-                </svg>
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="w-5 h-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                  strokeWidth={1.8}
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M13.875 18.825A10.05 10.05 0 0112 19
-                       c-4.478 0-8.268-2.943-9.542-7
-                       a9.957 9.957 0 013.574-4.568M9.88 9.88
-                       A3 3 0 0114.12 14.12M6.1 6.1l11.8 11.8"
-                  />
-                </svg>
-              )}
-            </button>
+            <PasswordToggle
+              visible={showConfirmPassword}
+              onToggle={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="top-12"
+            />
           </div>
 
           {/* Mensagem de erro */}
           {error && (
-            <p className="text-red-500 text-sm text-center font-medium">
-              {error}
-            </p>
+            <p className="text-red-500 text-sm text-center font-medium">{error}</p>
           )}
 
           {/* Botão */}
