@@ -1,22 +1,22 @@
 import React, { useMemo, useState } from "react";
-import { type Idea } from '@/components/IdeiaCard/BaseIdeiaCard';
-import StatsCardWithIcon from '@/components/StatsCard/StatsCardWithIcon';
+import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
+import StatsCardWithIcon from "@/components/StatsCard/StatsCardWithIcon";
 import { Lightbulb, Clock, Star, ChevronDown, Shuffle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SectionContainer from "@/components/SectionContainer/SectionContainer";
 import IdeaResultCard from "@/components/IdeiaCard/IdeaResultCard";
-
+import { ChatWidget } from "@/components/ChatWidget/ChatWidget";
 const themeOptions = [
   "Tecnologia",
-  "Educação",
+  "Educacao",
   "Marketing",
   "Viagem",
-  "Saúde",
-  "Negócio",
+  "Saude",
+  "Negocio",
   "Arte",
   "Sustentabilidade",
   "Gaming",
-  "Música",
+  "Musica",
 ];
 
 const sampleIdeas: Record<string, string[]> = {
@@ -25,13 +25,13 @@ const sampleIdeas: Record<string, string[]> = {
     "Plataforma de código aberto que permite criar assistentes de IA personalizados",
     "Sistema de backup quântico que protege dados contra qualquer tipo de falha",
   ],
-  Educação: [
+  Educacao: [
     "App que gamifica o aprendizado com desafios e recompensas diárias",
-    "Plataforma de mentorado onde alunos ensinam uns aos outros",
+    "Plataforma de mentoria onde alunos ensinam uns aos outros",
     "Tutor de IA que se adapta ao estilo de aprendizado de cada pessoa",
   ],
   Marketing: [
-    "Ferramenta que gera campanhas viralizar baseada em tendências em tempo real",
+    "Ferramenta que gera campanhas virais baseada em tendências em tempo real",
     "Plataforma de influenciadores que conecta marcas com criadores micro",
     "Dashboard que prediz o sucesso de campanhas antes do lançamento",
   ],
@@ -40,12 +40,12 @@ const sampleIdeas: Record<string, string[]> = {
     "Guia de viagem inteligente que aprende suas preferências",
     "Plataforma de trocas de casa segura com verificação biométrica",
   ],
-  Saúde: [
+  Saude: [
     "Wearable que detecta doenças 6 meses antes dos sintomas",
     "App de meditação com VR para terapia personalizada",
     "Sistema de telemedicina que funciona offline com IA",
   ],
-  Negócio: [
+  Negocio: [
     "Marketplace onde IA faz orçamentos automáticos",
     "Plataforma de consultoria com CEOs juniores mentorados",
     "Seguro de crédito baseado em dados comportamentais",
@@ -62,15 +62,16 @@ const sampleIdeas: Record<string, string[]> = {
   ],
   Gaming: [
     "Motor de jogos que cria mundos procedurais infinitos",
-    "Plataforma de esports com IA anti-cheating",
+    "Plataforma de eSports com IA anti-cheating",
     "Streaming de jogos com latência zero usando computação quântica",
   ],
-  Música: [
+  Musica: [
     "App que compõe música baseada em seu humor",
     "Plataforma de colaboração de música em tempo real",
-    "IA que remixeia suas músicas favoritas ao vivo",
+    "IA que remixea suas músicas favoritas ao vivo",
   ],
 };
+
 
 // helper (top-level or Utils)
 const pickRandom = <T,>(arr: readonly T[]) =>
@@ -84,6 +85,7 @@ const RANDOM_CONTEXTS = [
   "Integração com IA",
   "Modelo escalável",
 ] as const;
+
 
 export const GeneratorPage: React.FC = () => {
   const [theme, setTheme] = useState("");
@@ -159,7 +161,7 @@ export const GeneratorPage: React.FC = () => {
           <div className="max-w-3xl mx-auto">
             <div className="mb-10 text-center">
               <h1 className="text-4xl md:text-5xl font-bold mb-3 leading-tight">Transforme suas ideias em realidade</h1>
-              <p className="text-base font-light text-gray-600">Gere ideias criativas com inteligência artificial</p>
+              <p className="text-base font-light text-gray-600">Gere ideias criativas com IA</p>
             </div>
 
             {/* Prompt Row */}
@@ -272,6 +274,12 @@ export const GeneratorPage: React.FC = () => {
           />
         </div>
       </div>
+      <ChatWidget />
     </div>
   );
 };
+
+
+
+
+
