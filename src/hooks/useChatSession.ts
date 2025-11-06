@@ -1,4 +1,4 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { apiFetch } from '@/lib/api'
 import type { ChatMessage } from '@/types/chat'
 
@@ -49,6 +49,9 @@ export function useChatSession() {
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
+  const [starting, setStarting] = useState(false)
+  const startingRef = useRef(false)
+  const queuedPayloadRef = useRef<{ ideaId?: string | null } | null>(null)
 
   const resetSession = useCallback(() => {
     setSession(null)
@@ -104,6 +107,12 @@ export function useChatSession() {
 
   const startSession = useCallback(
     async (payload: { ideaId?: string | null }) => {
+      if (startingRef.current) {
+        queuedPayloadRef.current = payload
+        return
+      }
+      startingRef.current = true
+      setStarting(true)
       setLoading(true)
       setError(null)
       setNotice(null)
@@ -141,6 +150,14 @@ export function useChatSession() {
         setError(message)
         setLoading(false)
         throw err
+      } finally {
+        startingRef.current = false
+        setStarting(false)
+        const next = queuedPayloadRef.current
+        queuedPayloadRef.current = null
+        if (next) {
+          void startSession(next)
+        }
       }
     },
     [loadSession]
@@ -195,6 +212,13 @@ export function useChatSession() {
       setError(null)
       setNotice(null)
 
+       const optimistic: ChatMessage = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: message.trim(),
+      }
+      setMessages((prev) => [...prev, optimistic])
+
       try {
         const response = await apiFetch(`/api/chat/sessions/${session.sessionId}/messages`, {
           method: 'POST',
@@ -230,6 +254,7 @@ export function useChatSession() {
         const message =
           err instanceof Error ? err.message : 'Não foi possível enviar a mensagem.'
         setError(message)
+        setMessages((prev) => prev.filter((item) => item.id !== optimistic.id))
         throw err
       } finally {
         setSending(false)
@@ -246,6 +271,7 @@ export function useChatSession() {
     tokensUsed: session?.tokensUsed ?? null,
     messages,
     isLoading: loading,
+    isStarting: starting,
     isSending: sending,
     error,
     notice,

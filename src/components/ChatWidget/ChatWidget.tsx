@@ -30,8 +30,10 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
     ensureSummaries,
     sessionId,
     ideaId,
+    tokensRemaining,
     messages,
     isLoading,
+    isStarting,
     isSending,
     sessionError,
     notice,
@@ -39,6 +41,7 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
     startIdeaChat,
     sendMessage,
   } = useChatContext()
+  const limitReached = tokensRemaining !== null && tokensRemaining <= 0
 
   useEffect(() => {
     try {
@@ -65,18 +68,20 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
       return
     }
 
-    if (mode === 'chatlivre' && !sessionId) {
+    if (limitReached) return
+
+    if (mode === 'chatlivre' && !sessionId && !isStarting) {
       void startFreeChat()
       return
     }
 
-    if (mode === 'chatIdeas') {
+    if (mode === 'chatIdeas' && !isStarting) {
       void ensureSummaries()
     }
-  }, [open, mode, sessionId, startFreeChat, ensureSummaries])
+  }, [open, mode, sessionId, startFreeChat, ensureSummaries, limitReached, isStarting])
 
   useEffect(() => {
-    if (mode !== 'chatIdeas') {
+    if (mode !== 'chatIdeas' || limitReached || isStarting) {
       return
     }
 
@@ -95,10 +100,11 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
     if (ideaId !== selectedIdeaId) {
       void startIdeaChat(selectedIdeaId)
     }
-  }, [mode, summaries, selectedIdeaId, ideaId, startIdeaChat])
+  }, [mode, summaries, selectedIdeaId, ideaId, startIdeaChat, limitReached])
 
   const handleSwitch = useCallback(
     (nextMode: ChatModes) => {
+      if (limitReached) return
       if (nextMode === mode) return
       setMode(nextMode)
       if (nextMode === 'chatlivre') {
@@ -111,18 +117,22 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
       }
       setOpen(true)
     },
-    [mode, sessionId, startFreeChat, ensureSummaries]
+    [limitReached, mode, sessionId, startFreeChat, ensureSummaries]
   )
 
   const handleIdeaClick = useCallback(
     (summary: ChatIdeaSummary) => {
+      if (limitReached) return
       setSelectedIdeaId(summary.ideaId)
       void startIdeaChat(summary.ideaId)
     },
-    [startIdeaChat]
+    [limitReached, startIdeaChat]
   )
 
   const placeholder = useMemo(() => {
+    if (limitReached) {
+      return 'Tokens indisponiveis. Aguarde 24 horas para tentar novamente.'
+    }
     if (mode === 'chatIdeas') {
       if (!selectedIdeaId) {
         return 'Selecione uma ideia para comecar a conversa...'
@@ -134,14 +144,19 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
       return 'Faca uma pergunta sobre a ideia selecionada...'
     }
     return 'Escreva sua mensagem...'
-  }, [mode, selectedIdeaId, summaries])
+  }, [mode, selectedIdeaId, summaries, limitReached])
 
   const recentEntries = useMemo(() => {
     if (mode !== 'chatIdeas') return []
     return summaries
   }, [mode, summaries])
-
+  const lowTokens = tokensRemaining !== null && tokensRemaining > 0 && tokensRemaining <= 5
   const showRecent = mode === 'chatIdeas' && (loadingSummaries || recentEntries.length > 0)
+  const noticeMessage = limitReached
+    ? 'Seus tokens acabaram. Tente novamente em 24 horas.'
+    : lowTokens
+    ? 'Voce esta com poucos tokens disponiveis. Uma nova solicitacao pode nao ser processada.'
+    : notice ?? null
 
   return (
     <>
@@ -155,20 +170,23 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
 
       <div className="fixed bottom-6 right-6 z-50 flex w-full max-w-[720px] flex-col items-end gap-3 px-4 md:px-0">
         {open ? (
-          <div className="flex h-[70vh] w-full overflow-hidden rounded-3xl border border-[#d9d4ff] bg-white shadow-[0_24px_60px_rgba(99,102,241,0.16)] md:flex-row">
+          <div className="flex h-[70vh] w-full overflow-hidden rounded-3xl border border-[#d9d4ff] bg-white shadow-[0_24px_60px_rgba(99,102,241,0.16)]">
             {showRecent ? (
-              <aside className="hidden h-full w-52 flex-shrink-0 flex-col overflow-hidden border-r border-[#ebe7ff] bg-white px-4 py-6 md:flex">
-                <RecentIdeasHeading loading={loadingSummaries} error={summariesError} />
-                <RecentIdeasList
-                  ideas={recentEntries}
-                  loading={loadingSummaries}
-                  selectedIdeaId={selectedIdeaId}
-                  onSelect={handleIdeaClick}
-                />
-              </aside>
+              <div className="hidden h-full w-[260px] shrink-0 items-stretch md:flex">
+                <aside className="ml-4 mr-2 flex flex-1 flex-col gap-4 overflow-hidden rounded-2xl border border-[#ebe7ff] bg-white px-4 py-5">
+                  <RecentIdeasHeading loading={loadingSummaries} error={summariesError} />
+                  <RecentIdeasList
+                    ideas={recentEntries}
+                    loading={loadingSummaries}
+                    selectedIdeaId={selectedIdeaId}
+                    onSelect={handleIdeaClick}
+                    disabled={limitReached}
+                  />
+                </aside>
+              </div>
             ) : null}
 
-            <div className="flex flex-1 flex-col bg-white">
+            <div className="flex min-w-0 flex-1 flex-col bg-white">
               <header className="flex items-start justify-between gap-4 border-b border-[#eceafd] px-6 py-4">
                 <div>
                   <p className="text-base font-semibold text-slate-900">ChatDuo</p>
@@ -192,7 +210,11 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
                       type="button"
                       onClick={() => handleSwitch(id)}
                       aria-pressed={active}
-                      className={active ? 'relative pb-3 text-slate-900' : 'pb-3 hover:text-slate-600'}
+                      disabled={limitReached}
+                      className={cn(
+                        'pb-3 transition-colors disabled:cursor-not-allowed disabled:text-slate-300',
+                        active ? 'relative pb-3 text-slate-900' : 'hover:text-slate-600'
+                      )}
                     >
                       {label}
                       {active ? <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-slate-900" /> : null}
@@ -209,6 +231,7 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
                     loading={loadingSummaries}
                     selectedIdeaId={selectedIdeaId}
                     onSelect={handleIdeaClick}
+                    disabled={limitReached}
                   />
                 </div>
               ) : null}
@@ -217,14 +240,18 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
                 <Chat
                   messages={messages}
                   disabled={
-                    mode === 'chatIdeas'
+                    limitReached
+                      ? true
+                      : mode === 'chatIdeas'
                       ? !selectedIdeaId || !sessionId || loadingSummaries || summariesError !== null
                       : !sessionId
                   }
                   isLoading={isLoading}
                   isSending={isSending}
-                  showTyping={mode === 'chatIdeas' ? isSending && !!selectedIdeaId : isSending}
-                  notice={notice}
+                  showTyping={
+                    limitReached ? false : mode === 'chatIdeas' ? isSending && !!selectedIdeaId : isSending
+                  }
+                  notice={noticeMessage}
                   error={sessionError}
                   onSend={sendMessage}
                   placeholder={placeholder}
@@ -268,9 +295,10 @@ type RecentIdeasListProps = {
   loading: boolean
   selectedIdeaId: string | null
   onSelect: (idea: ChatIdeaSummary) => void
+  disabled?: boolean
 }
 
-function RecentIdeasList({ ideas, loading, selectedIdeaId, onSelect }: RecentIdeasListProps) {
+function RecentIdeasList({ ideas, loading, selectedIdeaId, onSelect, disabled }: RecentIdeasListProps) {
   if (loading) {
     return (
       <ul className="flex-1 space-y-4 overflow-hidden pr-1">
@@ -293,17 +321,20 @@ function RecentIdeasList({ ideas, loading, selectedIdeaId, onSelect }: RecentIde
       {ideas.map((idea) => {
         const active = idea.ideaId === selectedIdeaId
         return (
-          <li key={idea.ideaId}>
+          <li key={idea.ideaId} className="px-1">
             <button
               type="button"
               onClick={() => onSelect(idea)}
               className={cn(
-                'w-full rounded-xl px-2 py-2 text-left transition hover:bg-[#f3f0ff] focus:outline-none focus:ring-2 focus:ring-[#a855f7]/50 overflow-hidden',
-                active && 'bg-[#f3f0ff] text-slate-900'
+                'w-full overflow-hidden rounded-2xl border border-transparent px-3 py-2 text-left transition hover:border-[#cfb5ff] hover:bg-[#f6f1ff] focus:outline-none focus:ring-2 focus:ring-[#a855f7]/40 disabled:cursor-not-allowed disabled:opacity-60',
+                active && 'border-[#cbb4ff] bg-[#f3f0ff] text-slate-900 shadow-sm'
               )}
+              disabled={disabled}
             >
               <span className="mb-0.5 block truncate text-sm font-semibold text-slate-800">{idea.title}</span>
-              <span className="block truncate text-xs text-slate-500">Ideias rapidas para: {idea.summary}</span>
+              <span className="block truncate text-xs leading-tight text-slate-500">
+                Ideias rapidas para: {idea.summary}
+              </span>
             </button>
           </li>
         )

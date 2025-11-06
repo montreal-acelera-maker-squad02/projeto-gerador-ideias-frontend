@@ -31,7 +31,7 @@ export const LoginForm: React.FC = () => {
         localStorage.setItem("user", JSON.stringify(data.user));
       }
 
-      navigate("/history");
+      navigate("/generator");
     } catch (error: any) {
       console.error("Erro ao logar:", error?.response?.data || error?.message);
       alert("Falha ao fazer login. Verifique suas credenciais.");
@@ -69,7 +69,7 @@ export const LoginForm: React.FC = () => {
         />
       </div>
 
-      {/* Botão de login */}
+      {/* Botï¿½o de login */}
       <button
         type="submit"
         disabled={loading}

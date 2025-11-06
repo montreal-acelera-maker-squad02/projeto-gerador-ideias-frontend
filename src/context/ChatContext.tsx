@@ -26,6 +26,7 @@ type ChatContextValue = {
   tokensRemaining: number | null
   messages: ChatMessage[]
   isLoading: boolean
+  isStarting: boolean
   isSending: boolean
   sessionError: string | null
   notice: string | null
@@ -59,6 +60,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     tokensUsed,
     messages,
     isLoading,
+    isStarting,
     isSending,
     error: sessionError,
     notice,
@@ -114,6 +116,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       tokensUsed,
       messages,
       isLoading,
+      isStarting,
       isSending,
       sessionError,
       notice,
@@ -137,6 +140,7 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       tokensUsed,
       messages,
       isLoading,
+      isStarting,
       isSending,
       sessionError,
       notice,
