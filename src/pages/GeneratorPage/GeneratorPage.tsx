@@ -5,7 +5,10 @@ import { Lightbulb, Clock, Star, ChevronDown, Shuffle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SectionContainer from "@/components/SectionContainer/SectionContainer";
 import IdeaResultCard from "@/components/IdeiaCard/IdeaResultCard";
+import { AppHeader } from "@/components/Header/AppHeader";
+import { AppFooter } from "@/components/Footer/AppFooter";
 import { ChatWidget } from "@/components/ChatWidget/ChatWidget";
+
 const themeOptions = [
   "Tecnologia",
   "Educacao",
@@ -151,130 +154,136 @@ export const GeneratorPage: React.FC = () => {
   };
     
   return (
-     <div className="min-h-screen bg-white text-gray-900 relative">
+     <div className="min-h-screen bg-white text-gray-900 flex flex-col relative">
       {/* Decorative gradient (light only for now) */}
       <div className="fixed top-0 left-0 right-0 h-72 pointer-events-none z-0 bg-gradient-to-b from-blue-100/40 via-purple-100/30 to-transparent" />
-      <div className="relative z-10 max-w-7xl mx-auto px-8 py-12">
+      
+      <AppHeader />
+      <main className="flex-1">
+        <div className="relative z-10 max-w-7xl mx-auto px-8 py-12">
 
-        {/* Hero / Controls */}
-        <SectionContainer className="relative z-30 mb-16 p-8 rounded-2xl border bg-white border-gray-300 shadow-md animate-fadeInUp">
-          <div className="max-w-3xl mx-auto">
-            <div className="mb-10 text-center">
-              <h1 className="text-4xl md:text-5xl font-bold mb-3 leading-tight">Transforme suas ideias em realidade</h1>
-              <p className="text-base font-light text-gray-600">Gere ideias criativas com IA</p>
-            </div>
+          {/* Hero / Controls */}
+          <SectionContainer className="relative z-30 mb-16 p-8 rounded-2xl border bg-white border-gray-300 shadow-md animate-fadeInUp">
+            <div className="max-w-3xl mx-auto">
+              <div className="mb-10 text-center">
+                <h1 className="text-4xl md:text-5xl font-bold mb-3 leading-tight">Transforme suas ideias em realidade</h1>
+                <p className="text-base font-light text-gray-600">Gere ideias criativas com inteligência artificial</p>
+              </div>
 
-            {/* Prompt Row */}
-            <div className="flex items-center gap-2 px-6 py-4 border-2 rounded-2xl transition-all relative border-gray-300 bg-white">
-              {/* Theme button */}
-              <button
-                className="flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all hover:opacity-80"
-                onClick={() => setShowThemeDropdown(v => !v)}
-              >
-                <span className={cn("text-base font-light", theme ? "text-blue-600" : "text-gray-500")}>
-                  {theme || "Escolha o tema"}
-                </span>
-                <ChevronDown className={cn("w-5 h-5 transition-transform", showThemeDropdown && "rotate-180", theme ? "text-blue-600" : "text-gray-500")} />
-              </button>
+              {/* Prompt Row */}
+              <div className="flex items-center gap-2 px-6 py-4 border-2 rounded-2xl transition-all relative border-gray-300 bg-white">
+                {/* Theme button */}
+                <button
+                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all hover:opacity-80"
+                  onClick={() => setShowThemeDropdown(v => !v)}
+                >
+                  <span className={cn("text-base font-light", theme ? "text-blue-600" : "text-gray-500")}>
+                    {theme || "Escolha o tema"}
+                  </span>
+                  <ChevronDown className={cn("w-5 h-5 transition-transform", showThemeDropdown && "rotate-180", theme ? "text-blue-600" : "text-gray-500")} />
+                </button>
 
-              {/* Dropdown */}
-              {showThemeDropdown && (
-                <div className="absolute top-full left-0 mt-2 w-64 rounded-xl shadow-lg border overflow-hidden z-50 bg-white border-gray-300">
-                  <div className="p-2 max-h-64 overflow-y-auto">
-                    {themeOptions.map(opt => (
-                      <button
-                        key={opt}
-                        onClick={() => { setTheme(opt); setShowThemeDropdown(false); }}
-                        className={cn(
-                          "w-full text-left px-4 py-2 rounded-lg transition-all text-sm font-light",
-                          theme === opt ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-50"
-                        )}
-                      >
-                        {opt}
-                      </button>
-                    ))}
+                {/* Dropdown */}
+                {showThemeDropdown && (
+                  <div className="absolute top-full left-0 mt-2 w-64 rounded-xl shadow-lg border overflow-hidden z-50 bg-white border-gray-300">
+                    <div className="p-2 max-h-64 overflow-y-auto">
+                      {themeOptions.map(opt => (
+                        <button
+                          key={opt}
+                          onClick={() => { setTheme(opt); setShowThemeDropdown(false); }}
+                          className={cn(
+                            "w-full text-left px-4 py-2 rounded-lg transition-all text-sm font-light",
+                            theme === opt ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-50"
+                          )}
+                        >
+                          {opt}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <div className="w-px h-8 bg-gray-300" />
+                <div className="w-px h-8 bg-gray-300" />
 
-              {/* Context input */}
-              <input
-                value={context}
-                onChange={(e) => setContext(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") generateIdea(); }}
-                placeholder="Descreva o contexto ou desafio..."
-                className="flex-1 bg-transparent outline-none text-base font-light placeholder:font-light text-gray-900 placeholder:text-gray-400"
-              />
+                {/* Context input */}
+                <input
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") generateIdea(); }}
+                  placeholder="Descreva o contexto ou desafio..."
+                  className="flex-1 bg-transparent outline-none text-base font-light placeholder:font-light text-gray-900 placeholder:text-gray-400"
+                />
+              </div>
+
+              {/* Actions */}
+              <div className="flex items-center justify-center gap-4 mt-6">
+                <button
+                  onClick={() => generateIdea()}
+                  disabled={!theme.trim() || !context.trim() || isLoading}
+                  className="px-10 py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-600 text-white font-semibold text-base transition-all shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  {isLoading ? "Gerando..." : "Gerar Ideia"}
+                </button>
+                <button
+                  onClick={surpriseMe}
+                  disabled={isLoading}
+                  className="px-8 py-3.5 rounded-lg border font-light text-base transition-all flex items-center gap-2 border-gray-400 text-gray-700 hover:bg-gray-50 hover:border-gray-500"
+                >
+                  <Shuffle className="w-5 h-5" />
+                  Surpreenda-me
+                </button>
+              </div>
             </div>
+          </SectionContainer>
 
-            {/* Actions */}
-            <div className="flex items-center justify-center gap-4 mt-6">
-              <button
-                onClick={() => generateIdea()}
-                disabled={!theme.trim() || !context.trim() || isLoading}
-                className="px-10 py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-600 text-white font-semibold text-base transition-all shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
-              >
-                {isLoading ? "Gerando..." : "Gerar Ideia"}
-              </button>
-              <button
-                onClick={surpriseMe}
-                disabled={isLoading}
-                className="px-8 py-3.5 rounded-lg border font-light text-base transition-all flex items-center gap-2 border-gray-400 text-gray-700 hover:bg-gray-50 hover:border-gray-500"
-              >
-                <Shuffle className="w-5 h-5" />
-                Surpreenda-me
-              </button>
-            </div>
+          {/* Result */}
+          <div className="animate-fadeInUp animation-delay-400">
+            <h2 className="text-2xl font-light mb-6">Resultado</h2>
+
+            {currentIdea ? (
+              <IdeaResultCard
+                idea={currentIdea}
+                onToggleFavorite={(id) => toggleFavorite(id)}
+                onCopy={() => {}}
+                onShare={() => {}}
+              />            
+            ) : (
+              <SectionContainer className="rounded-2xl p-12 text-center animate-fadeIn border bg-white border-gray-200" >
+                <p className="text-lg font-light text-gray-600">Digite um tema e contexto para gerar sua primeira ideia criativa</p>
+              </SectionContainer>
+            )}
           </div>
-        </SectionContainer>
 
-        {/* Result */}
-        <div className="animate-fadeInUp animation-delay-400">
-          <h2 className="text-2xl font-light mb-6">Resultado</h2>
-
-          {currentIdea ? (
-            <IdeaResultCard
-              idea={currentIdea}
-              onToggleFavorite={(id) => toggleFavorite(id)}
-              onCopy={() => {}}
-              onShare={() => {}}
-            />            
-          ) : (
-            <SectionContainer className="rounded-2xl p-12 text-center animate-fadeIn border bg-white border-gray-200" >
-              <p className="text-lg font-light text-gray-600">Digite um tema e contexto para gerar sua primeira ideia criativa</p>
-            </SectionContainer>
-          )}
+          {/* Stats */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+            <StatsCardWithIcon
+              title="Ideias geradas"
+              value={ideas.length}
+              Icon={Lightbulb}
+              className="animation-delay-0"
+            />
+            <StatsCardWithIcon
+              title="Tempo médio"
+              value={
+                <span>
+                  {averageResponseTime} <span className="text-lg font-light text-gray-500">ms</span>
+                </span>
+              }
+              Icon={Clock}
+              delay={100}
+            />
+            <StatsCardWithIcon
+              title="Favoritas"
+              value={favoriteIdeas.length}
+              Icon={Star}
+              delay={200}
+            />
+          </div>
         </div>
-
-        {/* Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-          <StatsCardWithIcon
-            title="Ideias geradas"
-            value={ideas.length}
-            Icon={Lightbulb}
-            className="animation-delay-0"
-          />
-          <StatsCardWithIcon
-            title="Tempo médio"
-            value={
-              <span>
-                {averageResponseTime} <span className="text-lg font-light text-gray-500">ms</span>
-              </span>
-            }
-            Icon={Clock}
-            delay={100}
-          />
-          <StatsCardWithIcon
-            title="Favoritas"
-            value={favoriteIdeas.length}
-            Icon={Star}
-            delay={200}
-          />
-        </div>
-      </div>
+      </main>
       <ChatWidget />
+
+      <AppFooter />
     </div>
   );
 };

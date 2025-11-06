@@ -29,7 +29,7 @@ export const Hero: React.FC = () => {
   };
 
   return (
-    <section className="min-h-screen flex flex-col items-center justify-center text-center bg-[#F9F9FB] text-[#1E1E1E] px-8 pt-24">
+    <section className="min-h-screen flex flex-col items-center justify-center text-center bg-[#F9F9FB] text-[#1E1E1E] px-8 pt-24 pb-24">
       {/* === TÍTULO === */}
       <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-4">
         Transforme palavras em{" "}
