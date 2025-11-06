@@ -1,36 +1,45 @@
+import { useState } from "react";
+import { Heart, Loader2 } from "lucide-react";
 import BaseIdeaCard, { type BaseIdeaCardProps } from "./BaseIdeiaCard";
-import { Heart } from "lucide-react";
 
-export default function FavoriteCard(
-  props: Readonly<
-    Omit<
-      BaseIdeaCardProps,
-      | "density"
-      | "clampLines"
-      | "actions"
-      | "metaMode"
-      | "showDivider"
-      | "headerRight"
-      | "footerRight"
-    >
-  >
-) {
-  const favSurfaceLight =
-    "bg-gradient-to-r from-red-50 to-pink-50/30 border border-red-200/50 hover:border-red-300";
-  // const favSurfaceDark =
-  //   "dark:bg-gradient-to-r dark:from-red-900/20 dark:to-slate-800 dark:border-red-700/50";
+interface FavoriteCardProps
+  extends Omit<
+    BaseIdeaCardProps,
+    "density" | "clampLines" | "actions" | "metaMode" | "showDivider" | "headerRight"
+  > {
+  onToggleFavorite?: (id: string) => Promise<void> | void;
+}
+
+export default function FavoriteCard({
+  idea,
+  onToggleFavorite,
+  ...props
+}: Readonly<FavoriteCardProps>) {
+  const [loading, setLoading] = useState(false);
+
+  const handleClick = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (loading) return;
+    setLoading(true);
+    try {
+      await onToggleFavorite?.(idea.id);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const headerRight = (
     <button
       aria-label="Desfavoritar"
-      className="p-1"
-      title="Desfavoritar"
-      onClick={(e) => {
-        e.stopPropagation();
-        props.onToggleFavorite?.(props.idea.id);
-      }}
+      className="opacity-100 transition-all-smooth p-1 hover:scale-110 cursor-pointer"
+      title="Remover dos favoritos"
+      onClick={handleClick}
     >
-      <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+      {loading ? (
+        <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+      ) : (
+        <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+      )}
     </button>
   );
 
@@ -42,7 +51,8 @@ export default function FavoriteCard(
       metaMode="minimal"
       showDivider={false}
       headerRight={headerRight}
-      className={`${favSurfaceLight}`}
+      className="bg-linear-to-r from-pink-50 to-red-50/40 border border-red-200 hover:border-red-300 transition-all-smooth"
+      idea={idea}
       {...props}
     />
   );
