@@ -12,7 +12,12 @@ interface FavoriteCardProps
     | "showDivider"
     | "headerRight"
   > {
-  onToggleFavorite?: (id: string) => Promise<void> | void;
+  /** 
+   * Callback para (des)favoritar uma ideia.
+   * A função pode executar ações assíncronas internamente,
+   * mas **não deve retornar Promise** (garantindo compatibilidade com React).
+   */
+  onToggleFavorite?: (id: string) => void;
 }
 
 export default function FavoriteCard({
@@ -32,17 +37,21 @@ export default function FavoriteCard({
   const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (loading) return;
-
     setLoading(true);
 
-    const result = onToggleFavorite?.(idea.id);
-
-    if (result && typeof result === "object" && "finally" in result) {
-      result.finally(() => {
-        if (isMounted.current) setLoading(false);
-      });
-    } else if (isMounted.current) {
-      setLoading(false);
+    try {
+      // ✅ Força execução assíncrona, mas sem retornar Promise
+      const maybePromise = onToggleFavorite?.(idea.id) as unknown;
+      if (maybePromise instanceof Promise) {
+        maybePromise.finally(() => {
+          if (isMounted.current) setLoading(false);
+        });
+      } else if (isMounted.current) {
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error("Erro ao desfavoritar:", err);
+      if (isMounted.current) setLoading(false);
     }
   };
 
