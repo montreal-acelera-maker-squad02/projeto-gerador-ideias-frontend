@@ -5,6 +5,7 @@ import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
 import { useIdeas } from '@/hooks/useIdeas'
 import { THEMES } from '@/constants/themes'
 import { AppHeader } from '@/components/Header/AppHeader'
+import { AppFooter } from '@/components/Footer/AppFooter'
 
 export default function HistoryPage() {
   const [filters, setFilters] = useState<{ category: string; startDate: string; endDate: string }>({ category: '', startDate: '', endDate: '' })
@@ -134,6 +135,7 @@ export default function HistoryPage() {
           </div>
         </div>
       </main>
+      <AppFooter />
     </>
   )
 }

@@ -3,6 +3,7 @@ import { Navbar } from "@/components/Navbar/Navbar";
 import { LoginHeader } from "@/components/Login/LoginHeader";
 import { LoginForm } from "@/components/Login/LoginForm";
 import { LoginFooter } from "@/components/Login/LoginFooter";
+import { AppFooter } from "@/components/Footer/AppFooter";
 
 export const LoginPage: React.FC = () => {
   return (
@@ -18,6 +19,8 @@ export const LoginPage: React.FC = () => {
           <LoginFooter/>
         </div>
       </div>
+
+      <AppFooter />
     </div>
   );
 };
