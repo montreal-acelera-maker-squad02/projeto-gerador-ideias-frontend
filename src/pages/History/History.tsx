@@ -4,6 +4,7 @@ import FilterHistory from '@/components/FilterHistory'
 import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
 import { useIdeas } from '@/hooks/useIdeas'
 import { THEMES } from '@/constants/themes'
+import { AppHeader } from '@/components/Header/AppHeader'
 
 export default function HistoryPage() {
   const [filters, setFilters] = useState<{ category: string; startDate: string; endDate: string }>({ category: '', startDate: '', endDate: '' })
@@ -49,6 +50,8 @@ export default function HistoryPage() {
   const paginated = filtered.slice(start, start + pageSize)
 
   return (
+    <>
+    <AppHeader />
     <main className="min-h-screen p-6">
       <div className="grid gap-6 md:grid-cols-[300px_1fr]">
         <div>
@@ -131,6 +134,8 @@ export default function HistoryPage() {
         </div>
       </div>
     </main>
+        </>
+
   )
 }
 
