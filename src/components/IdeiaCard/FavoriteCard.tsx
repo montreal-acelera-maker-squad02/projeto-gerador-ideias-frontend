@@ -37,13 +37,12 @@ export default function FavoriteCard({
 
     const result = onToggleFavorite?.(idea.id);
 
-    // 🔹 Lida corretamente com funções sync ou async sem retornar Promise
-    if (result && typeof (result as Promise<void>).finally === "function") {
-      (result as Promise<void>).finally(() => {
+    if (result && typeof result === "object" && "finally" in result) {
+      result.finally(() => {
         if (isMounted.current) setLoading(false);
       });
-    } else {
-      if (isMounted.current) setLoading(false);
+    } else if (isMounted.current) {
+      setLoading(false);
     }
   };
 
