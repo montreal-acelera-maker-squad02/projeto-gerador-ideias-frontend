@@ -5,6 +5,7 @@ import { Lightbulb, Clock, Star, ChevronDown, Shuffle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SectionContainer from "@/components/SectionContainer/SectionContainer";
 import IdeaResultCard from "@/components/IdeiaCard/IdeaResultCard";
+import { AppHeader } from "@/components/Header/AppHeader";
 
 const themeOptions = [
   "Tecnologia",
@@ -152,6 +153,8 @@ export const GeneratorPage: React.FC = () => {
      <div className="min-h-screen bg-white text-gray-900 relative">
       {/* Decorative gradient (light only for now) */}
       <div className="fixed top-0 left-0 right-0 h-72 pointer-events-none z-0 bg-gradient-to-b from-blue-100/40 via-purple-100/30 to-transparent" />
+      
+      <AppHeader />
       <div className="relative z-10 max-w-7xl mx-auto px-8 py-12">
 
         {/* Hero / Controls */}
