@@ -25,15 +25,47 @@ export default function FavoritesPage() {
     loadFavorites();
   }, []);
 
-  // 🔹 Quando o usuário clica no coração
-  const handleUnfavorite = useCallback(async (id: string) => {
-    try {
-      await ideaService.toggleFavorite(id, false); // desfavoritar
-      setIdeas((prev) => prev.filter((idea) => idea.id !== id)); // remove da tela
-    } catch (err) {
-      console.error("Erro ao desfavoritar:", err);
-    }
+  // 🔹 Quando o usuário clica no coração (desfavoritar)
+  const handleUnfavorite = useCallback((id: string) => {
+    Promise.resolve(ideaService.toggleFavorite(id, false))
+      .then(() => {
+        setIdeas((prev) => prev.filter((idea) => idea.id !== id)); // remove da tela
+      })
+      .catch((err) => {
+        console.error("Erro ao desfavoritar:", err);
+      });
   }, []);
+
+  // 🔹 Define o conteúdo exibido com base no estado
+  let content;
+
+  if (loading) {
+    content = (
+      <SectionContainer className="rounded-2xl p-12 text-center animate-fadeIn bg-linear-to-br from-gray-50 to-pink-50/30 border border-gray-200">
+        <p className="font-light text-gray-600">Carregando favoritos...</p>
+      </SectionContainer>
+    );
+  } else if (ideas.length === 0) {
+    content = (
+      <SectionContainer className="rounded-2xl p-12 text-center animate-fadeIn bg-linear-to-br from-gray-50 to-pink-50/30 border border-gray-200">
+        <p className="font-light text-gray-600">
+          Nenhuma ideia favorita ainda
+        </p>
+      </SectionContainer>
+    );
+  } else {
+    content = (
+      <div className="mt-6 grid gap-y-4 sm:gap-y-4 md:gap-y-6 lg:gap-y-8">
+        {ideas.map((idea) => (
+          <FavoriteCard
+            key={idea.id}
+            idea={idea}
+            onToggleFavorite={handleUnfavorite}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-white text-gray-900 flex flex-col relative">
@@ -44,28 +76,7 @@ export default function FavoritesPage() {
       <main className="flex-1">
         <div className="max-w-7xl mx-auto px-8 py-12 relative z-10 animate-fadeInUp">
           <h2 className="text-3xl font-light mb-8 text-gray-900">Favoritos</h2>
-
-          {loading ? (
-            <SectionContainer className="rounded-2xl p-12 text-center animate-fadeIn bg-linear-to-br from-gray-50 to-pink-50/30 border border-gray-200">
-              <p className="font-light text-gray-600">Carregando favoritos...</p>
-            </SectionContainer>
-          ) : ideas.length === 0 ? (
-            <SectionContainer className="rounded-2xl p-12 text-center animate-fadeIn bg-linear-to-br from-gray-50 to-pink-50/30 border border-gray-200">
-              <p className="font-light text-gray-600">
-                Nenhuma ideia favorita ainda
-              </p>
-            </SectionContainer>
-          ) : (
-            <div className="mt-6 grid gap-y-4 sm:gap-y-4 md:gap-y-6 lg:gap-y-8">
-              {ideas.map((idea) => (
-                <FavoriteCard
-                  key={idea.id}
-                  idea={idea}
-                  onToggleFavorite={handleUnfavorite}
-                />
-              ))}
-            </div>
-          )}
+          {content}
         </div>
       </main>
 

@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Heart, Loader2 } from "lucide-react";
-import BaseIdeaCard, { type BaseIdeaCardProps } from "./BaseIdeiaCard";
+import BaseIdeiaCard, { type BaseIdeaCardProps } from "./BaseIdeiaCard";
 
 interface FavoriteCardProps
   extends Omit<
     BaseIdeaCardProps,
-    "density" | "clampLines" | "actions" | "metaMode" | "showDivider" | "headerRight"
+    | "density"
+    | "clampLines"
+    | "actions"
+    | "metaMode"
+    | "showDivider"
+    | "headerRight"
   > {
   onToggleFavorite?: (id: string) => Promise<void> | void;
 }
@@ -16,15 +21,29 @@ export default function FavoriteCard({
   ...props
 }: Readonly<FavoriteCardProps>) {
   const [loading, setLoading] = useState(false);
+  const isMounted = useRef(true);
 
-  const handleClick = async (e: React.MouseEvent) => {
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const handleClick = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (loading) return;
+
     setLoading(true);
-    try {
-      await onToggleFavorite?.(idea.id);
-    } finally {
-      setLoading(false);
+
+    const result = onToggleFavorite?.(idea.id);
+
+    // 🔹 Lida corretamente com funções sync ou async sem retornar Promise
+    if (result && typeof (result as Promise<void>).finally === "function") {
+      (result as Promise<void>).finally(() => {
+        if (isMounted.current) setLoading(false);
+      });
+    } else {
+      if (isMounted.current) setLoading(false);
     }
   };
 
@@ -34,6 +53,7 @@ export default function FavoriteCard({
       className="opacity-100 transition-all-smooth p-1 hover:scale-110 cursor-pointer"
       title="Remover dos favoritos"
       onClick={handleClick}
+      disabled={loading}
     >
       {loading ? (
         <Loader2 className="w-4 h-4 animate-spin text-red-500" />
@@ -44,7 +64,7 @@ export default function FavoriteCard({
   );
 
   return (
-    <BaseIdeaCard
+    <BaseIdeiaCard
       density="compact"
       clampLines={2}
       actions="none"
