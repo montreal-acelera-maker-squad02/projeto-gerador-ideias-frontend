@@ -1,18 +1,9 @@
-﻿import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-import HistoryPage from "@/pages/History/History";
-import { LandingPage } from "@/pages/LandingPage/LandingPage";
-import { LoginPage } from "@/pages/Login/LoginPage";
-import { RegisterPage } from "./pages/Register/Register";
+﻿import AppRoutes from '@/routes';
 
-export default function App() {
+function App() {
   return (
-    <Router>
-      <Routes>
-        <Route path="/history" element={<HistoryPage />} />
-        <Route path="/" element={<LandingPage />} />
-        <Route path="/login" element={<LoginPage />} />
-         <Route path="/register" element={<RegisterPage />} />
-      </Routes>
-    </Router>
+    <AppRoutes />
   );
 }
+
+export default App;
