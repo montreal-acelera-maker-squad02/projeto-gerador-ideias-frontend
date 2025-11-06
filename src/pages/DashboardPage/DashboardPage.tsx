@@ -13,6 +13,7 @@ import {
   Bar,
   Cell,
 } from "recharts";
+import { AppHeader } from "@/components/Header/AppHeader";
 
 export type Idea = {
   id: string;
@@ -54,6 +55,7 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ ideas = [] }) => {
   return (
     <div className="min-h-screen bg-white text-gray-900 relative">
       <div className="fixed top-0 left-0 right-0 h-72 pointer-events-none z-0 bg-linear-to-b from-blue-100/40 via-purple-100/30 to-transparent" />
+      <AppHeader />
       <div className="max-w-7xl mx-auto px-8 py-12">
         <h2 className="text-3xl font-light mb-8 text-gray-900">Dashboard</h2>
 

@@ -2,6 +2,7 @@ import React from "react";
 import { NavLink } from "react-router-dom";
 import { cn } from '@/lib/utils';
 import Brand from './Brand';
+import UserMenu from "./UserMenu";
 
 export type NavItem = Readonly<{ to: string; label: string; exact?: boolean}>;
 
@@ -14,14 +15,16 @@ const DEFAULT_NAV: NavItem[] = [
 
 export type AppHeaderProps = Readonly<{
     nav?: NavItem[];
-    className?: string;
     userName?: string;
+    className?: string;
     onLogout?: () => void;
 }>;
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
     nav = DEFAULT_NAV,
+    userName = "Usuário",
     className,
+    onLogout,
 }) => {
     return (
         <header
@@ -35,34 +38,41 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                 {/* Brand */}
                 <Brand />
 
-                {/* Primary nav */}
-                <nav className="hidden md:flex gap-8">
-                    {nav.map((item) => (
-                        <NavLink
-                            key={item.to}
-                            to={item.to}
-                            className={({ isActive }) =>
-                                cn(
-                                    "text-sm font-light transition-all-smooth relative px-1 py-1",
-                                    isActive ? "text-blue-600" : "text-gray-600 hover:text-gray-900"
-                                )
-                            }
-                            end={item.exact}
-                        >
-                            {({ isActive }) => (
-                                <span className="relative inline-block">
-                                    {item.label}
-                                    {isActive ? (
-                                        <span className="absolute left-0 right-0 -bottom-0.5 h-0.5 bg-blue-600 animate-fadeIn" />
-                                    ) : null}
-                                </span>
-                            )}
-                        </NavLink>
-                    ))}
-                </nav>
+                <div className="flex items-center gap-8">
+                    {/* Primary nav */}
+                    <nav className="hidden md:flex gap-8">
+                        {nav.map((item) => (
+                            <NavLink
+                                key={item.to}
+                                to={item.to}
+                                className={({ isActive }) =>
+                                    cn(
+                                        "text-sm font-light transition-all-smooth relative px-1 py-1",
+                                        isActive ? "text-blue-600" : "text-gray-600 hover:text-gray-900"
+                                    )
+                                }
+                                end={item.exact}
+                            >
+                                {({ isActive }) => (
+                                    <span className="relative inline-block">
+                                        {item.label}
+                                        {isActive ? (
+                                            <span className="absolute left-0 right-0 -bottom-0.5 h-0.5 bg-blue-600 animate-fadeIn" />
+                                        ) : null}
+                                    </span>
+                                )}
+                            </NavLink>
+                        ))}
+                    </nav>
 
-                {/* User Dropdown */}
-                <div className="2-24" aria-hidden />
+                    {/* User Menu */}
+                    <UserMenu 
+                        userName={userName}
+                        onLogout={onLogout}
+                        nav={nav}
+                        includeMobileNav
+                    />
+                </div>
             </div>
         </header>
     );
