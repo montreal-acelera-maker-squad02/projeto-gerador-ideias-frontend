@@ -157,6 +157,7 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
     : lowTokens
     ? 'Voce esta com poucos tokens disponiveis. Uma nova solicitacao pode nao ser processada.'
     : notice ?? null
+  const canUseIdeasTab = recentEntries.length > 0
 
   return (
     <>
@@ -222,17 +223,28 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
                   )
                 })}
               </nav>
+              {!canUseIdeasTab && mode === 'chatlivre' ? (
+                <p className="px-6 pb-3 text-xs text-slate-500">
+                  Gere uma ideia primeiro para liberar o Chat Ideas.
+                </p>
+              ) : null}
 
-              {showRecent ? (
+              {mode === 'chatIdeas' ? (
                 <div className="border-b border-[#eceafd] px-6 py-4 md:hidden">
                   <RecentIdeasHeading loading={loadingSummaries} error={summariesError} />
-                  <RecentIdeasList
-                    ideas={recentEntries}
-                    loading={loadingSummaries}
-                    selectedIdeaId={selectedIdeaId}
-                    onSelect={handleIdeaClick}
-                    disabled={limitReached}
-                  />
+                  {canUseIdeasTab ? (
+                    <RecentIdeasList
+                      ideas={recentEntries}
+                      loading={loadingSummaries}
+                      selectedIdeaId={selectedIdeaId}
+                      onSelect={handleIdeaClick}
+                      disabled={limitReached}
+                    />
+                  ) : (
+                    <p className="text-sm text-slate-500">
+                      Nenhuma ideia gerada ainda. Gere uma ideia antes de usar o chat.
+                    </p>
+                  )}
                 </div>
               ) : null}
 
@@ -243,7 +255,11 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
                     limitReached
                       ? true
                       : mode === 'chatIdeas'
-                      ? !selectedIdeaId || !sessionId || loadingSummaries || summariesError !== null
+                      ? !canUseIdeasTab ||
+                        !selectedIdeaId ||
+                        !sessionId ||
+                        loadingSummaries ||
+                        summariesError !== null
                       : !sessionId
                   }
                   isLoading={isLoading}
