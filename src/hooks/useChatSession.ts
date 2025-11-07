@@ -23,13 +23,13 @@ function normalizeMessage(payload: any): ChatMessage | null {
   const role = String(payload?.role ?? '').toLowerCase()
   if (role !== 'user' && role !== 'assistant') return null
 
-  const randomId =
+  const fallbackId =
     typeof globalThis !== 'undefined' && globalThis.crypto?.randomUUID
       ? globalThis.crypto.randomUUID()
       : Date.now().toString()
-  const id = payload?.id ?? payload?.messageId ?? payload?.uuid ?? `${role}-${randomId}`
-  const content = String(payload?.content ?? '').trim()
 
+  const id = payload?.id ?? payload?.messageId ?? payload?.uuid ?? `${role}-${fallbackId}`
+  const content = String(payload?.content ?? '').trim()
   if (!content) return null
 
   const createdAt = payload?.createdAt ?? payload?.created_at ?? payload?.timestamp ?? null
@@ -50,8 +50,10 @@ export function useChatSession() {
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)
   const [starting, setStarting] = useState(false)
+
   const startingRef = useRef(false)
   const queuedPayloadRef = useRef<{ ideaId?: string | null } | null>(null)
+  const loadingSessionRef = useRef<string | null>(null)
 
   const resetSession = useCallback(() => {
     setSession(null)
@@ -60,10 +62,16 @@ export function useChatSession() {
     setNotice(null)
     setLoading(false)
     setSending(false)
+    startingRef.current = false
+    queuedPayloadRef.current = null
+    loadingSessionRef.current = null
+    setStarting(false)
   }, [])
 
   const loadSession = useCallback(
     async (sessionId: string) => {
+      if (loadingSessionRef.current === sessionId) return
+      loadingSessionRef.current = sessionId
       setLoading(true)
       setError(null)
 
@@ -95,11 +103,12 @@ export function useChatSession() {
         }))
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : 'Não foi possível carregar a sessão do chat.'
+          err instanceof Error ? err.message : 'Nao foi possivel carregar a sessao do chat.'
         setError(message)
         throw err
       } finally {
         setLoading(false)
+        loadingSessionRef.current = null
       }
     },
     []
@@ -111,6 +120,7 @@ export function useChatSession() {
         queuedPayloadRef.current = payload
         return
       }
+
       startingRef.current = true
       setStarting(true)
       setLoading(true)
@@ -121,9 +131,7 @@ export function useChatSession() {
       try {
         const response = await apiFetch('/api/chat/start', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload?.ideaId ? { ideaId: payload.ideaId } : {}),
         })
 
@@ -146,7 +154,7 @@ export function useChatSession() {
         await loadSession(sessionId)
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : 'Não foi possível iniciar a conversa.'
+          err instanceof Error ? err.message : 'Nao foi possivel iniciar a conversa.'
         setError(message)
         setLoading(false)
         throw err
@@ -164,16 +172,17 @@ export function useChatSession() {
   )
 
   const startFreeChat = useCallback(async () => {
+    if (startingRef.current || loading) return
     if (session?.chatType === 'FREE' && session.sessionId) {
       await loadSession(session.sessionId)
       return
     }
     await startSession({ ideaId: null })
-  }, [session, startSession, loadSession])
+  }, [session, startSession, loadSession, loading])
 
   const startIdeaChat = useCallback(
     async (ideaId: string) => {
-      if (!ideaId) return
+      if (!ideaId || startingRef.current) return
       const normalizedId = String(ideaId)
       if (
         session?.chatType === 'IDEA_BASED' &&
@@ -212,7 +221,7 @@ export function useChatSession() {
       setError(null)
       setNotice(null)
 
-       const optimistic: ChatMessage = {
+      const optimistic: ChatMessage = {
         id: `user-${Date.now()}`,
         role: 'user',
         content: message.trim(),
@@ -222,9 +231,7 @@ export function useChatSession() {
       try {
         const response = await apiFetch(`/api/chat/sessions/${session.sessionId}/messages`, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ message }),
         })
 
@@ -233,7 +240,7 @@ export function useChatSession() {
           const warning =
             payload?.message ??
             payload?.error ??
-            'Mensagem rejeitada. Verifique o conteúdo ou tente novamente mais tarde.'
+            'Mensagem rejeitada. Verifique o conteudo ou tente novamente mais tarde.'
           setNotice(warning)
           await loadSession(session.sessionId)
           return
@@ -252,7 +259,7 @@ export function useChatSession() {
         await loadSession(session.sessionId)
       } catch (err) {
         const message =
-          err instanceof Error ? err.message : 'Não foi possível enviar a mensagem.'
+          err instanceof Error ? err.message : 'Nao foi possivel enviar a mensagem.'
         setError(message)
         setMessages((prev) => prev.filter((item) => item.id !== optimistic.id))
         throw err
@@ -282,3 +289,4 @@ export function useChatSession() {
     reloadSession: loadSession,
   }
 }
+

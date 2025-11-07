@@ -105,6 +105,7 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
   const handleSwitch = useCallback(
     (nextMode: ChatModes) => {
       if (limitReached) return
+      if (nextMode === 'chatIdeas' && chatIdeasDisabled) return
       if (nextMode === mode) return
       setMode(nextMode)
       if (nextMode === 'chatlivre') {
@@ -146,18 +147,17 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
     return 'Escreva sua mensagem...'
   }, [mode, selectedIdeaId, summaries, limitReached])
 
-  const recentEntries = useMemo(() => {
-    if (mode !== 'chatIdeas') return []
-    return summaries
-  }, [mode, summaries])
+  const recentEntries = useMemo(() => summaries, [summaries])
   const lowTokens = tokensRemaining !== null && tokensRemaining > 0 && tokensRemaining <= 5
-  const showRecent = mode === 'chatIdeas' && (loadingSummaries || recentEntries.length > 0)
+  const limitReached = tokensRemaining !== null && tokensRemaining <= 0
+  const hasIdeas = recentEntries.length > 0
+  const showRecent = mode === 'chatIdeas' && (loadingSummaries || hasIdeas)
   const noticeMessage = limitReached
     ? 'Seus tokens acabaram. Tente novamente em 24 horas.'
     : lowTokens
     ? 'Voce esta com poucos tokens disponiveis. Uma nova solicitacao pode nao ser processada.'
     : notice ?? null
-  const canUseIdeasTab = recentEntries.length > 0
+  const chatIdeasDisabled = limitReached || (!loadingSummaries && !hasIdeas)
 
   return (
     <>
@@ -211,7 +211,7 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
                       type="button"
                       onClick={() => handleSwitch(id)}
                       aria-pressed={active}
-                      disabled={limitReached}
+                      disabled={id === 'chatIdeas' ? chatIdeasDisabled : limitReached}
                       className={cn(
                         'pb-3 transition-colors disabled:cursor-not-allowed disabled:text-slate-300',
                         active ? 'relative pb-3 text-slate-900' : 'hover:text-slate-600'
@@ -223,7 +223,7 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
                   )
                 })}
               </nav>
-              {!canUseIdeasTab && mode === 'chatlivre' ? (
+              {!hasIdeas && !loadingSummaries && mode === 'chatlivre' ? (
                 <p className="px-6 pb-3 text-xs text-slate-500">
                   Gere uma ideia primeiro para liberar o Chat Ideas.
                 </p>
@@ -232,7 +232,7 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
               {mode === 'chatIdeas' ? (
                 <div className="border-b border-[#eceafd] px-6 py-4 md:hidden">
                   <RecentIdeasHeading loading={loadingSummaries} error={summariesError} />
-                  {canUseIdeasTab ? (
+                  {hasIdeas ? (
                     <RecentIdeasList
                       ideas={recentEntries}
                       loading={loadingSummaries}
@@ -255,7 +255,7 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
                     limitReached
                       ? true
                       : mode === 'chatIdeas'
-                      ? !canUseIdeasTab ||
+                      ? !hasIdeas ||
                         !selectedIdeaId ||
                         !sessionId ||
                         loadingSummaries ||

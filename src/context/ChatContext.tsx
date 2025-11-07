@@ -12,7 +12,7 @@ import { useChatSession } from '@/hooks/useChatSession'
 import type { ChatIdeaSummary, ChatMessage } from '@/types/chat'
 import { getAuthToken } from '@/lib/api'
 
-type ChatContextValue = {
+export type ChatContextValue = {
   summaries: ChatIdeaSummary[]
   summariesLoading: boolean
   summariesError: string | null
