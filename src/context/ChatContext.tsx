@@ -39,7 +39,7 @@ export type ChatContextValue = {
   preloading: boolean
 }
 
-const ChatContext = createContext<ChatContextValue | undefined>(undefined)
+export const ChatContext = createContext<ChatContextValue | undefined>(undefined)
 
 export function ChatProvider({ children }: { children: ReactNode }) {
   const [summariesEnabled, setSummariesEnabled] = useState(false)

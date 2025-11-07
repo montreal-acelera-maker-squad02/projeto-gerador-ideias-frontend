@@ -54,8 +54,8 @@ describe('LoginForm', () => {
     })
 
     const user = userEvent.setup()
-    await user.type(screen.getByLabelText(/email/i), 'user@example.com')
-    await user.type(screen.getByLabelText(/senha/i), 'Senha@123')
+    await user.type(screen.getByPlaceholderText(/seu@email/i), 'user@example.com')
+    await user.type(screen.getByPlaceholderText(/\*\*\*\*\*\*\*\*/i), 'Senha@123')
 
     await user.click(screen.getByRole('button', { name: /fazer login/i }))
 
@@ -73,8 +73,8 @@ describe('LoginForm', () => {
     renderWithProviders(<LoginForm />, { chatContext })
 
     const user = userEvent.setup()
-    await user.type(screen.getByLabelText(/email/i), 'user@example.com')
-    await user.type(screen.getByLabelText(/senha/i), 'senha')
+    await user.type(screen.getByPlaceholderText(/seu@email/i), 'user@example.com')
+    await user.type(screen.getByPlaceholderText(/\*\*\*\*\*\*\*\*/i), 'senha')
 
     await user.click(screen.getByRole('button', { name: /fazer login/i }))
 

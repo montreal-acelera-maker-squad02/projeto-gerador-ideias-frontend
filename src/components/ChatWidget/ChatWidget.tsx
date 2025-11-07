@@ -148,9 +148,8 @@ export function ChatWidget({ defaultOpen = false }: ChatWidgetProps) {
   }, [mode, selectedIdeaId, summaries, limitReached])
 
   const recentEntries = useMemo(() => summaries, [summaries])
-  const lowTokens = tokensRemaining !== null && tokensRemaining > 0 && tokensRemaining <= 5
-  const limitReached = tokensRemaining !== null && tokensRemaining <= 0
   const hasIdeas = recentEntries.length > 0
+  const lowTokens = tokensRemaining !== null && tokensRemaining > 0 && tokensRemaining <= 5
   const showRecent = mode === 'chatIdeas' && (loadingSummaries || hasIdeas)
   const noticeMessage = limitReached
     ? 'Seus tokens acabaram. Tente novamente em 24 horas.'

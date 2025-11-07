@@ -1,8 +1,15 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeAll, vi } from 'vitest'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ChatWidget } from '../ChatWidget'
 import { renderWithProviders, createChatContextValue } from '@/test/test-utils'
+
+beforeAll(() => {
+  Object.defineProperty(window.HTMLElement.prototype, 'scrollIntoView', {
+    value: vi.fn(),
+    configurable: true,
+  })
+})
 
 describe('ChatWidget', () => {
   it('desabilita Chat Ideas quando nao ha historico', async () => {
@@ -33,4 +40,3 @@ describe('ChatWidget', () => {
     expect(screen.getByText(/seus tokens acabaram/i)).toBeInTheDocument()
   })
 })
-
