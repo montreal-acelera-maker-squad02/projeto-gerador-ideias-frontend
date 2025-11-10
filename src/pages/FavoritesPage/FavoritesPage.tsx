@@ -1,8 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import SectionContainer from "@/components/SectionContainer/SectionContainer";
 import FavoriteCard from "@/components/IdeiaCard/FavoriteCard";
-import { AppHeader } from "@/components/Header/AppHeader";
-import { AppFooter } from "@/components/Footer/AppFooter";
 import { ideaService } from "@/services/ideaService";
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
 
@@ -73,19 +71,9 @@ export default function FavoritesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col relative">
-      <div className="fixed top-0 left-0 right-0 h-72 pointer-events-none z-0 bg-linear-to-b from-blue-100/40 via-purple-100/30 to-transparent" />
-
-      <AppHeader />
-
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-8 py-12 relative z-10 animate-fadeInUp">
-          <h2 className="text-3xl font-light mb-8 text-gray-900">Favoritos</h2>
-          {renderContent()}
-        </div>
-      </main>
-
-      <AppFooter />
+    <div className="max-w-7xl mx-auto px-8 py-12 relative z-10 animate-fadeInUp">
+      <h2 className="text-3xl font-light mb-8 text-gray-900">Favoritos</h2>
+      {renderContent()}
     </div>
   );
 }
