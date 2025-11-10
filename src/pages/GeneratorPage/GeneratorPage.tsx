@@ -92,12 +92,28 @@ const RANDOM_CONTEXTS = [
 
 const MAX_CONTEXT = 50;
 
-export const GeneratorPage: React.FC = () => {
-  const [theme, setTheme] = useState("");
-  const [context, setContext] = useState("");
+type GeneratorPageProps = {
+  defaultTheme?: string
+  defaultContext?: string
+  initialIdeas?: Idea[]
+  initialCurrentIdea?: Idea | null
+  disableChatWidget?: boolean
+}
+
+export const GeneratorPage: React.FC<GeneratorPageProps> = ({
+  defaultTheme = "",
+  defaultContext = "",
+  initialIdeas = [],
+  initialCurrentIdea = null,
+  disableChatWidget = false,
+}) => {
+  const [theme, setTheme] = useState(defaultTheme);
+  const [context, setContext] = useState(defaultContext);
   const [isLoading, setIsLoading] = useState(false);
-  const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [currentIdea, setCurrentIdea] = useState<Idea | null>(null);
+  const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
+  const [currentIdea, setCurrentIdea] = useState<Idea | null>(
+    initialCurrentIdea ?? initialIdeas[0] ?? null
+  );
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
 
   const favoriteIdeas = useMemo(() => ideas.filter(i => i.isFavorite), [ideas]);
@@ -333,7 +349,7 @@ export const GeneratorPage: React.FC = () => {
           </div>
         </div>
       </main>
-      <ChatWidget />
+      {disableChatWidget ? null : <ChatWidget />}
 
       <AppFooter />
     </div>
