@@ -17,6 +17,7 @@ blob-report
 coverage
 .eslintcache
 .vite
+.vscode
 
 # Environment files (keep example only)
 .env

@@ -1,4 +1,4 @@
-﻿import React, { useState } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "@/services/authService";
 import { setAuthTokens } from "@/lib/api";
@@ -34,7 +34,7 @@ export const LoginForm: React.FC = () => {
         localStorage.setItem("user", JSON.stringify(userData));
       }
 
-      navigate("/history");
+      navigate("/generator");
     } catch (error: any) {
       console.error("Erro ao logar:", error?.response?.data || error?.message);
       alert("Falha ao fazer login. Verifique suas credenciais.");
@@ -52,7 +52,7 @@ export const LoginForm: React.FC = () => {
         name="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="seu@email.com"
+        placeholder="Digite seu email"
       />
 
       {/* Campo de senha */}
@@ -63,7 +63,7 @@ export const LoginForm: React.FC = () => {
           name="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="********"
+          placeholder="Digite sua senha"
         />
         <PasswordToggle
           visible={showPassword}
@@ -72,7 +72,7 @@ export const LoginForm: React.FC = () => {
         />
       </div>
 
-      {/* Botão de login */}
+      {/* Bot�o de login */}
       <button
         type="submit"
         disabled={loading}
@@ -86,3 +86,4 @@ export const LoginForm: React.FC = () => {
     </form>
   );
 };
+
