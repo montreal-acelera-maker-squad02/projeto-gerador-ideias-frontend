@@ -7,6 +7,7 @@ import SectionContainer from "@/components/SectionContainer/SectionContainer";
 import IdeaResultCard from "@/components/IdeiaCard/IdeaResultCard";
 import { AppHeader } from "@/components/Header/AppHeader";
 import { AppFooter } from "@/components/Footer/AppFooter";
+import AutoResizeTextarea from "@/components/AutoResizeTextarea/AutoResizeTextarea";
 
 const themeOptions = [
   "Tecnologia",
@@ -87,6 +88,8 @@ const RANDOM_CONTEXTS = [
   "Modelo escalável",
 ] as const;
 
+const MAX_CONTEXT = 50;
+
 export const GeneratorPage: React.FC = () => {
   const [theme, setTheme] = useState("");
   const [context, setContext] = useState("");
@@ -96,6 +99,7 @@ export const GeneratorPage: React.FC = () => {
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
 
   const favoriteIdeas = useMemo(() => ideas.filter(i => i.isFavorite), [ideas]);
+  
   const averageResponseTime = useMemo(() => {
     if (ideas.length === 0) return 0;
     const sum = ideas.reduce((acc, i) => acc + (i.responseTime || 0), 0);
@@ -168,17 +172,77 @@ export const GeneratorPage: React.FC = () => {
               </div>
 
               {/* Prompt Row */}
-              <div className="flex items-center gap-2 px-6 py-4 border-2 rounded-2xl transition-all relative border-gray-300 bg-white">
-                {/* Theme button */}
-                <button
-                  className="flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all hover:opacity-80"
-                  onClick={() => setShowThemeDropdown(v => !v)}
-                >
-                  <span className={cn("text-base font-light", theme ? "text-blue-600" : "text-gray-500")}>
-                    {theme || "Escolha o tema"}
+              <div className="px-6 py-4 border-2 rounded-2xl transition-all relative border-gray-300 bg-white">
+                {/* Mobile */}
+                <div className="flex items-center justify-between gap-2 sm:hidden mb-2">
+                  <button
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:opacity-80 bg-white"
+                    onClick={() => setShowThemeDropdown((v) => !v)}
+                  >
+                    <span
+                      className={cn(
+                        "text-sm font-light",
+                        theme ? "text-blue-600" : "text-gray-500"
+                      )}
+                    >
+                      {theme || "Escolha o tema"}
+                    </span>
+                    <ChevronDown
+                      className={cn(
+                        "w-4 h-4 transition-transform",
+                        showThemeDropdown && "rotate-180",
+                        theme ? "text-blue-600" : "text-gray-500"
+                      )}
+                    />
+                  </button>
+
+                  <span className="text-[10px] leading-none text-gray-400">
+                    {context.length}/{MAX_CONTEXT}
                   </span>
-                  <ChevronDown className={cn("w-5 h-5 transition-transform", showThemeDropdown && "rotate-180", theme ? "text-blue-600" : "text-gray-500")} />
-                </button>
+                </div>
+
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+                  {/* Desktop */}
+                  <div className="hidden sm:flex items-center gap-2">
+                    <button
+                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all hover:opacity-80"
+                      onClick={() => setShowThemeDropdown((v) => !v)}
+                    >
+                      <span
+                        className={cn(
+                          "text-base font-light",
+                          theme ? "text-blue-600" : "text-gray-500"
+                        )}
+                      >
+                        {theme || "Escolha o tema"}
+                      </span>
+                      <ChevronDown
+                        className={cn(
+                          "w-5 h-5 transition-transform",
+                          showThemeDropdown && "rotate-180",
+                          theme ? "text-blue-600" : "text-gray-500"
+                        )}
+                      />
+                    </button>
+
+                    <div className="w-px h-8 bg-gray-300" />
+                  </div>
+
+                  {/* input sempre ocupa o restante */}
+                  <div className="relative flex-1">
+                    <AutoResizeTextarea
+                      value={context}
+                      onChange={(e) => setContext(e.target.value)}
+                      maxChars={MAX_CONTEXT}
+                      placeholder="Descreva o contexto ou desafio..."
+                      className="w-full bg-transparent outline-none text-base font-light placeholder:font-light text-gray-900 placeholder:text-gray-400 pr-9"
+                    />
+                    {/* contador dentro do input só no desktop */}
+                    <span className="pointer-events-none hidden sm:inline absolute right-2 top-1/2 -translate-y-1/2 text-[10px] leading-none text-gray-400">
+                      {context.length}/{MAX_CONTEXT}
+                    </span>
+                  </div>
+                </div>
 
                 {/* Dropdown */}
                 {showThemeDropdown && (
@@ -199,21 +263,10 @@ export const GeneratorPage: React.FC = () => {
                     </div>
                   </div>
                 )}
-
-                <div className="w-px h-8 bg-gray-300" />
-
-                {/* Context input */}
-                <input
-                  value={context}
-                  onChange={(e) => setContext(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") generateIdea(); }}
-                  placeholder="Descreva o contexto ou desafio..."
-                  className="flex-1 bg-transparent outline-none text-base font-light placeholder:font-light text-gray-900 placeholder:text-gray-400"
-                />
               </div>
 
               {/* Actions */}
-              <div className="flex items-center justify-center gap-4 mt-6">
+              <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
                 <button
                   onClick={() => generateIdea()}
                   disabled={!theme.trim() || !context.trim() || isLoading}
