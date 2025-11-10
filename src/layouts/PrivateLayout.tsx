@@ -1,5 +1,4 @@
 // src/layouts/PrivateLayout.tsx
-import React from "react";
 import { Outlet } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { AppHeader } from "@/components/Header/AppHeader";
