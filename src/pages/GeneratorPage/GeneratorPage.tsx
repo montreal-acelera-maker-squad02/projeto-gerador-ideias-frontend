@@ -7,11 +7,8 @@ import SectionContainer from "@/components/SectionContainer/SectionContainer";
 import IdeaResultCard from "@/components/IdeiaCard/IdeaResultCard";
 import { AppHeader } from "@/components/Header/AppHeader";
 import { AppFooter } from "@/components/Footer/AppFooter";
-<<<<<<< HEAD
 import { ChatWidget } from "@/components/ChatWidget/ChatWidget";
-=======
 import AutoResizeTextarea from "@/components/AutoResizeTextarea/AutoResizeTextarea";
->>>>>>> development
 
 const themeOptions = [
   "Tecnologia",
@@ -93,10 +90,7 @@ const RANDOM_CONTEXTS = [
   "Modelo escalável",
 ] as const;
 
-<<<<<<< HEAD
-=======
 const MAX_CONTEXT = 50;
->>>>>>> development
 
 export const GeneratorPage: React.FC = () => {
   const [theme, setTheme] = useState("");

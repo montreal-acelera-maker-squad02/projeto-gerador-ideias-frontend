@@ -4,7 +4,7 @@ import { screen } from '@testing-library/react'
 import { LoginForm } from '../LoginForm'
 import { renderWithProviders } from '@/test/test-utils'
 import { authService } from '@/services/authService'
-import { setAuthToken } from '@/lib/api'
+import { setAuthTokens } from '@/lib/api'
 
 const mockNavigate = vi.fn()
 
@@ -23,7 +23,7 @@ vi.mock('@/services/authService', () => ({
 }))
 
 vi.mock('@/lib/api', () => ({
-  setAuthToken: vi.fn(),
+  setAuthTokens: vi.fn(),
 }))
 
 const loginMock = vi.mocked(authService.login)
@@ -43,8 +43,11 @@ describe('LoginForm', () => {
 
   it('realiza login com sucesso e salva token', async () => {
     loginMock.mockResolvedValue({
-      token: 'abc123',
-      user: { id: 42, name: 'Tester' },
+      accessToken: 'access-123',
+      refreshToken: 'refresh-abc',
+      uuid: 'user-uuid',
+      name: 'Tester',
+      email: 'user@example.com',
     })
     renderWithProviders(<LoginForm />)
 
@@ -55,8 +58,11 @@ describe('LoginForm', () => {
     await user.click(screen.getByRole('button', { name: /fazer login/i }))
 
     expect(loginMock).toHaveBeenCalledWith('user@example.com', 'Senha@123')
-    expect(setAuthToken).toHaveBeenCalledWith('abc123')
-    expect(storageSpy).toHaveBeenCalledWith('token', 'abc123')
+    expect(setAuthTokens).toHaveBeenCalledWith('access-123', 'refresh-abc')
+    expect(storageSpy).toHaveBeenCalledWith(
+      'user',
+      JSON.stringify({ uuid: 'user-uuid', name: 'Tester', email: 'user@example.com' })
+    )
     expect(mockNavigate).toHaveBeenCalledWith('/generator')
   })
 
