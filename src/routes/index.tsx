@@ -7,6 +7,8 @@ import { GeneratorPage } from '@/pages/GeneratorPage/GeneratorPage';
 import HistoryPage from '@/pages/History/History';
 import FavoritesPage from '@/pages/FavoritesPage/FavoritesPage';
 import DashboardPage from '@/pages/DashboardPage/DashboardPage';
+import { PublicLayout } from '@/layouts/PublicLayout';
+import { PrivateLayout } from '@/layouts/PrivateLayout';
 
 
 const AppRoutes: React.FC = () => {
@@ -14,15 +16,19 @@ const AppRoutes: React.FC = () => {
         <Router>
             <Routes>
                 {/* Public Routes */}
-                <Route path="/" element={<LandingPage />} />
-                <Route path="/login" element={<LoginPage />} />
-                <Route path="/register" element={<RegisterPage />} />
+                <Route element={<PublicLayout />}>
+                    <Route path="/" element={<LandingPage />} />
+                    <Route path="/login" element={<LoginPage />} />
+                    <Route path="/register" element={<RegisterPage />} />                
+                </Route>
 
                 {/* Private Routes */}
-                <Route path="/generator" element={<GeneratorPage />} />
-                <Route path="/history" element={<HistoryPage />} />
-                <Route path="/favorites" element={<FavoritesPage />} />
-                <Route path="/dashboard" element={<DashboardPage />} />
+                <Route element={<PrivateLayout />}>
+                    <Route path="/generator" element={<GeneratorPage />} />
+                    <Route path="/history" element={<HistoryPage />} />
+                    <Route path="/favorites" element={<FavoritesPage />} />
+                    <Route path="/dashboard" element={<DashboardPage />} />
+                </Route>
 
             </Routes>
 

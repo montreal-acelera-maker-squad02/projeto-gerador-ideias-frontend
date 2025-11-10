@@ -4,8 +4,6 @@ import FilterHistory from '@/components/FilterHistory'
 import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
 import { useIdeas } from '@/hooks/useIdeas'
 import { THEMES } from '@/constants/themes'
-import { AppHeader } from '@/components/Header/AppHeader'
-import { AppFooter } from '@/components/Footer/AppFooter'
 import { ideaService } from '@/services/ideaService'
 
 export default function HistoryPage() {
@@ -94,89 +92,85 @@ export default function HistoryPage() {
   const paginated = filtered.slice(start, start + pageSize)
 
   return (
-    <>
-      <AppHeader />
-      <main className="min-h-screen p-6">
-        <div className="grid gap-6 md:grid-cols-[300px_1fr]">
-          <div>
-            <FilterHistory
-              fixed={false}
-              categories={[{ label: 'Todas', value: '' }, ...THEMES]}
-              value={filters}
-              onChange={(v) =>
-                setFilters({
-                  category: v.category ?? '',
-                  startDate: v.startDate ?? '',
-                  endDate: v.endDate ?? ''
-                })
-              }
-            />
-          </div>
-
-          <div className="flex flex-col gap-6">
-            {ideasLoading ? (
-              <div className="rounded-lg border border-gray-200 p-6 text-sm text-gray-600 h-32 flex items-center justify-center">
-                Carregando ideias...
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="rounded-lg border border-gray-200 p-6 text-sm text-gray-600 h-32 flex items-center justify-center">
-                Nenhuma ideia encontrada.
-              </div>
-            ) : (
-              paginated.map((idea) => (
-                <IdeaHistoryCard
-                  key={idea.id}
-                  idea={idea}
-                  onToggleFavorite={handleToggleFavorite}
-                  onDelete={handleDelete}
-                />
-              ))
-            )}
-
-            {filtered.length > 0 && (
-              <div className="flex items-center justify-center pt-2">
-                <nav
-                  aria-label="Paginação"
-                  className="inline-flex items-stretch rounded-lg border border-gray-300 bg-white overflow-hidden shadow-sm"
-                >
-                  <button
-                    onClick={() => setPage(1)}
-                    disabled={currentPage <= 1}
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-40"
-                  >
-                    «
-                  </button>
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage <= 1}
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
-                  >
-                    ‹
-                  </button>
-                  <span className="px-4 py-1.5 text-sm font-semibold bg-slate-700 text-white border-l border-gray-300">
-                    {currentPage}
-                  </span>
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage >= totalPages}
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
-                  >
-                    ›
-                  </button>
-                  <button
-                    onClick={() => setPage(totalPages)}
-                    disabled={currentPage >= totalPages}
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
-                  >
-                    »
-                  </button>
-                </nav>
-              </div>
-            )}
-          </div>
+    <div className="min-h-screen p-6">
+      <div className="grid gap-6 md:grid-cols-[300px_1fr]">
+        <div>
+          <FilterHistory
+            fixed={false}
+            categories={[{ label: 'Todas', value: '' }, ...THEMES]}
+            value={filters}
+            onChange={(v) =>
+              setFilters({
+                category: v.category ?? '',
+                startDate: v.startDate ?? '',
+                endDate: v.endDate ?? ''
+              })
+            }
+          />
         </div>
-      </main>
-      <AppFooter />
-    </>
+
+        <div className="flex flex-col gap-6">
+          {ideasLoading ? (
+            <div className="rounded-lg border border-gray-200 p-6 text-sm text-gray-600 h-32 flex items-center justify-center">
+              Carregando ideias...
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="rounded-lg border border-gray-200 p-6 text-sm text-gray-600 h-32 flex items-center justify-center">
+              Nenhuma ideia encontrada.
+            </div>
+          ) : (
+            paginated.map((idea) => (
+              <IdeaHistoryCard
+                key={idea.id}
+                idea={idea}
+                onToggleFavorite={handleToggleFavorite}
+                onDelete={handleDelete}
+              />
+            ))
+          )}
+
+          {filtered.length > 0 && (
+            <div className="flex items-center justify-center pt-2">
+              <nav
+                aria-label="Paginação"
+                className="inline-flex items-stretch rounded-lg border border-gray-300 bg-white overflow-hidden shadow-sm"
+              >
+                <button
+                  onClick={() => setPage(1)}
+                  disabled={currentPage <= 1}
+                  className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-40"
+                >
+                  «
+                </button>
+                <button
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                  className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
+                >
+                  ‹
+                </button>
+                <span className="px-4 py-1.5 text-sm font-semibold bg-slate-700 text-white border-l border-gray-300">
+                  {currentPage}
+                </span>
+                <button
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                  className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
+                >
+                  ›
+                </button>
+                <button
+                  onClick={() => setPage(totalPages)}
+                  disabled={currentPage >= totalPages}
+                  className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
+                >
+                  »
+                </button>
+              </nav>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
