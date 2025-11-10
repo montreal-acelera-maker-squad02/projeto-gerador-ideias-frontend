@@ -1,48 +1,86 @@
-import BaseIdeaCard, { type BaseIdeaCardProps } from "./BaseIdeiaCard";
-import { Heart } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Heart, Loader2 } from "lucide-react";
+import BaseIdeiaCard, { type BaseIdeaCardProps } from "./BaseIdeiaCard";
 
-export default function FavoriteCard(
-  props: Readonly<
-    Omit<
-      BaseIdeaCardProps,
-      | "density"
-      | "clampLines"
-      | "actions"
-      | "metaMode"
-      | "showDivider"
-      | "headerRight"
-      | "footerRight"
-    >
-  >
-) {
-  const favSurfaceLight =
-    "bg-gradient-to-r from-red-50 to-pink-50/30 border border-red-200/50 hover:border-red-300";
-  // const favSurfaceDark =
-  //   "dark:bg-gradient-to-r dark:from-red-900/20 dark:to-slate-800 dark:border-red-700/50";
+interface FavoriteCardProps
+  extends Omit<
+    BaseIdeaCardProps,
+    | "density"
+    | "clampLines"
+    | "actions"
+    | "metaMode"
+    | "showDivider"
+    | "headerRight"
+  > {
+  /** 
+   * Callback para (des)favoritar uma ideia.
+   * A função pode executar ações assíncronas internamente,
+   * mas **não deve retornar Promise** (garantindo compatibilidade com React).
+   */
+  onToggleFavorite?: (id: string) => void;
+}
+
+export default function FavoriteCard({
+  idea,
+  onToggleFavorite,
+  ...props
+}: Readonly<FavoriteCardProps>) {
+  const [loading, setLoading] = useState(false);
+  const isMounted = useRef(true);
+
+  useEffect(() => {
+    return () => {
+      isMounted.current = false;
+    };
+  }, []);
+
+  const handleClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (loading) return;
+    setLoading(true);
+
+    try {
+      // ✅ Força execução assíncrona, mas sem retornar Promise
+      const maybePromise = onToggleFavorite?.(idea.id) as unknown;
+      if (maybePromise instanceof Promise) {
+        maybePromise.finally(() => {
+          if (isMounted.current) setLoading(false);
+        });
+      } else if (isMounted.current) {
+        setLoading(false);
+      }
+    } catch (err) {
+      console.error("Erro ao desfavoritar:", err);
+      if (isMounted.current) setLoading(false);
+    }
+  };
 
   const headerRight = (
     <button
       aria-label="Desfavoritar"
-      className="p-1"
-      title="Desfavoritar"
-      onClick={(e) => {
-        e.stopPropagation();
-        props.onToggleFavorite?.(props.idea.id);
-      }}
+      className="opacity-100 transition-all-smooth p-1 hover:scale-110 cursor-pointer"
+      title="Remover dos favoritos"
+      onClick={handleClick}
+      disabled={loading}
     >
-      <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+      {loading ? (
+        <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+      ) : (
+        <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+      )}
     </button>
   );
 
   return (
-    <BaseIdeaCard
+    <BaseIdeiaCard
       density="compact"
       clampLines={2}
       actions="none"
       metaMode="minimal"
       showDivider={false}
       headerRight={headerRight}
-      className={`${favSurfaceLight}`}
+      className="bg-linear-to-r from-pink-50 to-red-50/40 border border-red-200 hover:border-red-300 transition-all-smooth"
+      idea={idea}
       {...props}
     />
   );

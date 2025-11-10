@@ -6,41 +6,84 @@ import { useIdeas } from '@/hooks/useIdeas'
 import { THEMES } from '@/constants/themes'
 import { AppHeader } from '@/components/Header/AppHeader'
 import { AppFooter } from '@/components/Footer/AppFooter'
+import { ideaService } from '@/services/ideaService'
 
 export default function HistoryPage() {
-  const [filters, setFilters] = useState<{ category: string; startDate: string; endDate: string }>({ category: '', startDate: '', endDate: '' })
+  const [filters, setFilters] = useState<{ category: string; startDate: string; endDate: string }>({
+    category: '',
+    startDate: '',
+    endDate: ''
+  })
   const [page, setPage] = useState<number>(1)
   const pageSize = 5
 
   const [ideas, setIdeas] = useState<Idea[]>([])
   const { data: ideasData, loading: ideasLoading } = useIdeas(filters)
 
+  // 🔹 Quando as ideias são carregadas, sincroniza com backend de favoritos
   useEffect(() => {
+    async function syncFavorites() {
+      try {
+        const favorites = await ideaService.getFavorites()
+        const favoriteIds = new Set(favorites.map((f) => f.id))
+        setIdeas(
+          (ideasData || []).map((idea) => ({
+            ...idea,
+            isFavorite: favoriteIds.has(idea.id)
+          }))
+        )
+      } catch (err) {
+        console.error('Erro ao sincronizar favoritos:', err)
+        setIdeas(ideasData || [])
+      }
+    }
+
     if (Array.isArray(ideasData)) {
-      setIdeas(ideasData)
+      syncFavorites()
     }
   }, [ideasData])
 
-  // reset para primeira página ao alterar filtros
+  // resetar página ao alterar filtros
   useEffect(() => {
     setPage(1)
   }, [filters.category, filters.startDate, filters.endDate])
 
-  const categories = THEMES
-
-  const handleToggleFavorite = useCallback((id: string) => {
-    setIdeas((prev) => prev.map((i) => (i.id === id ? { ...i, isFavorite: !i.isFavorite } : i)))
-  }, [])
+  const handleToggleFavorite = useCallback(
+    async (id: string) => {
+      setIdeas((prev) =>
+        prev.map((i) => (i.id === id ? { ...i, isFavorite: !i.isFavorite } : i))
+      )
+      try {
+        const idea = ideas.find((i) => i.id === id)
+        if (!idea) return
+        await ideaService.toggleFavorite(id, !idea.isFavorite)
+      } catch (err) {
+        console.error('Erro ao atualizar favorito:', err)
+        // rollback visual se falhar
+        setIdeas((prev) =>
+          prev.map((i) => (i.id === id ? { ...i, isFavorite: !i.isFavorite } : i))
+        )
+      }
+    },
+    [ideas]
+  )
 
   const handleDelete = useCallback((id: string) => {
     setIdeas((prev) => prev.filter((i) => i.id !== id))
   }, [])
 
   const filtered = ideas.filter((i) => {
-    const byCat = !filters.category || (typeof i.theme === 'string' && i.theme.toLowerCase() === filters.category.toLowerCase())
+    const byCat =
+      !filters.category ||
+      (typeof i.theme === 'string' &&
+        i.theme.toLowerCase() === filters.category.toLowerCase())
     const ts = new Date(i.timestamp).getTime()
-    const startOk = !filters.startDate || ts >= new Date(`${filters.startDate}T00:00:00`).getTime()
-    const endOk = !filters.endDate || ts <= new Date(`${filters.endDate}T23:59:59.999`).getTime()
+    const startOk =
+      !filters.startDate ||
+      ts >= new Date(`${filters.startDate}T00:00:00`).getTime()
+    const endOk =
+      !filters.endDate ||
+      ts <= new Date(`${filters.endDate}T23:59:59.999`).getTime()
     return byCat && startOk && endOk
   })
 
@@ -58,15 +101,18 @@ export default function HistoryPage() {
           <div>
             <FilterHistory
               fixed={false}
-              categories={[{ label: 'Todas', value: '' }, ...categories]}
+              categories={[{ label: 'Todas', value: '' }, ...THEMES]}
               value={filters}
-              onChange={(v) => setFilters({
-                category: v.category ?? '',
-                startDate: v.startDate ?? '',
-                endDate: v.endDate ?? ''
-              })}
+              onChange={(v) =>
+                setFilters({
+                  category: v.category ?? '',
+                  startDate: v.startDate ?? '',
+                  endDate: v.endDate ?? ''
+                })
+              }
             />
           </div>
+
           <div className="flex flex-col gap-6">
             {ideasLoading ? (
               <div className="rounded-lg border border-gray-200 p-6 text-sm text-gray-600 h-32 flex items-center justify-center">
@@ -79,32 +125,31 @@ export default function HistoryPage() {
             ) : (
               paginated.map((idea) => (
                 <IdeaHistoryCard
-                key={idea.id}
-                idea={idea}
-                onToggleFavorite={handleToggleFavorite}
-                onDelete={handleDelete}
+                  key={idea.id}
+                  idea={idea}
+                  onToggleFavorite={handleToggleFavorite}
+                  onDelete={handleDelete}
                 />
               ))
             )}
 
             {filtered.length > 0 && (
               <div className="flex items-center justify-center pt-2">
-                <nav aria-label="Paginação" className="inline-flex items-stretch rounded-lg border border-gray-300 bg-white overflow-hidden shadow-sm">
+                <nav
+                  aria-label="Paginação"
+                  className="inline-flex items-stretch rounded-lg border border-gray-300 bg-white overflow-hidden shadow-sm"
+                >
                   <button
-                    type="button"
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-40 disabled:cursor-not-allowed"
                     onClick={() => setPage(1)}
                     disabled={currentPage <= 1}
-                    aria-label="Primeira página"
+                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-40"
                   >
                     «
                   </button>
                   <button
-                    type="button"
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={currentPage <= 1}
-                    aria-label="Página anterior"
+                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
                   >
                     ‹
                   </button>
@@ -112,20 +157,16 @@ export default function HistoryPage() {
                     {currentPage}
                   </span>
                   <button
-                    type="button"
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={currentPage >= totalPages}
-                    aria-label="Próxima página"
-                    >
+                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
+                  >
                     ›
                   </button>
                   <button
-                    type="button"
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40 disabled:cursor-not-allowed"
                     onClick={() => setPage(totalPages)}
                     disabled={currentPage >= totalPages}
-                    aria-label="Última página"
+                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
                   >
                     »
                   </button>
@@ -139,4 +180,3 @@ export default function HistoryPage() {
     </>
   )
 }
-

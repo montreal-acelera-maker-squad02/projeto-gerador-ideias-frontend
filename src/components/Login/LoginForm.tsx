@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { authService } from "@/services/authService";
-import { setAuthToken } from "@/lib/api";
+import { setAuthTokens } from "@/lib/api";
 import { TextField } from "@/components/common/TextField";
 import { PasswordToggle } from "@/components/common/PasswordToggle";
 
@@ -19,13 +19,19 @@ export const LoginForm: React.FC = () => {
     try {
       const data = await authService.login(email, password);
 
-      if (data?.token) {
-        setAuthToken(data.token);
-        localStorage.setItem("token", data.token);
+      if (data?.accessToken && data?.refreshToken) {
+        setAuthTokens(data.accessToken, data.refreshToken);
+      } else {
+        throw new Error("Resposta de login inválida");
       }
 
-      if (data?.user) {
-        localStorage.setItem("user", JSON.stringify(data.user));
+      if (data?.name || data?.email) {
+        const userData = {
+          uuid: data.uuid,
+          name: data.name,
+          email: data.email,
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
       }
 
       navigate("/generator");

@@ -3,6 +3,7 @@ import { NavLink } from "react-router-dom";
 import { cn } from '@/lib/utils';
 import Brand from './Brand';
 import UserMenu from "./UserMenu";
+import { useLogout } from "@/lib/auth";
 
 export type NavItem = Readonly<{ to: string; label: string; exact?: boolean}>;
 
@@ -15,17 +16,16 @@ const DEFAULT_NAV: NavItem[] = [
 
 export type AppHeaderProps = Readonly<{
     nav?: NavItem[];
-    userName?: string;
     className?: string;
-    onLogout?: () => void;
 }>;
 
 export const AppHeader: React.FC<AppHeaderProps> = ({
     nav = DEFAULT_NAV,
-    userName = "Usuário",
     className,
-    onLogout,
 }) => {
+    const handleLogout = useLogout();
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    const userName = user?.name || 'Usuário';
     return (
         <header
             className={cn(
@@ -68,7 +68,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
                     {/* User Menu */}
                     <UserMenu 
                         userName={userName}
-                        onLogout={onLogout}
+                        onLogout={handleLogout}
                         nav={nav}
                         includeMobileNav
                     />
