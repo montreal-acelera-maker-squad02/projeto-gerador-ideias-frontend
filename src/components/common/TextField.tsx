@@ -8,6 +8,7 @@ interface TextFieldProps {
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
   required?: boolean;
+  id?: string;
 }
 
 export const TextField: React.FC<TextFieldProps> = ({
@@ -18,19 +19,28 @@ export const TextField: React.FC<TextFieldProps> = ({
   onChange,
   placeholder,
   required = true,
-}) => (
-  <div>
-    <label className="block text-sm font-medium text-gray-700 mb-1">
-      {label}
-    </label>
-    <input
-      type={type}
-      name={name}
-      value={value}
-      onChange={onChange}
-      placeholder={placeholder}
-      className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none transition"
-      required={required}
-    />
-  </div>
-);
+  id,
+}) => {
+  const inputId = id ?? name;
+
+  return (
+    <div>
+      <label
+        htmlFor={inputId}
+        className="block text-sm font-medium text-gray-700 mb-1"
+      >
+        {label}
+      </label>
+      <input
+        id={inputId}
+        type={type}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        className="w-full px-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-indigo-500 outline-none transition"
+        required={required}
+      />
+    </div>
+  );
+};

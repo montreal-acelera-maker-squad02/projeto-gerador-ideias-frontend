@@ -49,7 +49,7 @@ export const LoginForm: React.FC = () => {
         name="email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
-        placeholder="seu@email.com"
+        placeholder="Digite seu email"
       />
 
       {/* Campo de senha */}
@@ -60,7 +60,7 @@ export const LoginForm: React.FC = () => {
           name="password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          placeholder="********"
+          placeholder="Digite sua senha"
         />
         <PasswordToggle
           visible={showPassword}

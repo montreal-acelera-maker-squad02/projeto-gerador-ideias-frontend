@@ -42,6 +42,58 @@ function normalizeMessage(payload: any): ChatMessage | null {
   }
 }
 
+function extractMessagesFromPayload(payload: any): ChatMessage[] {
+  if (!payload) return []
+
+  const collected: ChatMessage[] = []
+  const seenIds = new Set<string>()
+
+  const pushMessage = (candidate: ChatMessage | null) => {
+    if (!candidate) return
+    if (seenIds.has(candidate.id)) return
+    seenIds.add(candidate.id)
+    collected.push(candidate)
+  }
+
+  pushMessage(normalizeMessage(payload))
+
+  if (Array.isArray(payload?.messages)) {
+    for (const item of payload.messages) {
+      pushMessage(normalizeMessage(item))
+    }
+  }
+
+  if (payload?.message && typeof payload.message === 'object') {
+    pushMessage(normalizeMessage(payload.message))
+  } else if (typeof payload?.message === 'string') {
+    const trimmed = payload.message.trim()
+    if (trimmed) {
+      pushMessage({
+        id: `assistant-message-${Date.now()}-${collected.length}`,
+        role: 'assistant',
+        content: trimmed,
+      })
+    }
+  }
+
+  const stringFields: Array<'reply' | 'response'> = ['reply', 'response']
+  for (const field of stringFields) {
+    const value = payload?.[field]
+    if (typeof value === 'string') {
+      const trimmed = value.trim()
+      if (trimmed) {
+        pushMessage({
+          id: `assistant-${field}-${Date.now()}-${collected.length}`,
+          role: 'assistant',
+          content: trimmed,
+        })
+      }
+    }
+  }
+
+  return collected
+}
+
 export function useChatSession() {
   const [session, setSession] = useState<SessionState | null>(null)
   const [messages, setMessages] = useState<ChatMessage[]>([])
@@ -256,7 +308,24 @@ export function useChatSession() {
           tokensUsed: payload?.tokensUsed ?? payload?.tokens ?? null,
         })
 
-        await loadSession(session.sessionId)
+        const responseMessages = extractMessagesFromPayload(payload)
+        const hasConversationSnapshot = Array.isArray(payload?.messages)
+
+        if (responseMessages.length > 0) {
+          setMessages((prev) => {
+            if (hasConversationSnapshot) {
+              return responseMessages
+            }
+            const existingIds = new Set(prev.map((item) => item.id))
+            const fresh = responseMessages.filter((item) => !existingIds.has(item.id))
+            if (fresh.length === 0) {
+              return prev
+            }
+            return [...prev, ...fresh]
+          })
+        } else {
+          await loadSession(session.sessionId)
+        }
       } catch (err) {
         const message =
           err instanceof Error ? err.message : 'Nao foi possivel enviar a mensagem.'
@@ -289,4 +358,3 @@ export function useChatSession() {
     reloadSession: loadSession,
   }
 }
-

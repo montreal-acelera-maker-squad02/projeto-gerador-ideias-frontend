@@ -14,8 +14,8 @@ test.describe('Fluxos de autenticacao e chatbot', () => {
 
     await page.getByLabel('Nome Completo').fill('Usuário Teste')
     await page.getByLabel('Email').fill('novo@exemplo.com')
-    await page.getByLabel('Senha').fill('Senha@123')
-    await page.getByLabel('Confirmar Senha').fill('Senha@123')
+    await page.getByLabel(/^Senha$/i).fill('Senha@123')
+    await page.getByLabel(/confirmar senha/i).fill('Senha@123')
     await page.getByRole('button', { name: /criar conta/i }).click()
 
     await expect(page).toHaveURL(/\/login$/)
@@ -51,21 +51,26 @@ test.describe('Fluxos de autenticacao e chatbot', () => {
       })
     })
 
-    await page.route('**/api/chat/sessions/**/messages', async (route) => {
-      await route.fulfill({
-        status: 200,
-        contentType: 'application/json',
-        body: JSON.stringify({
-          role: 'assistant',
-          content: 'Resposta mockada da IA',
-          tokensRemaining: 4,
-          tokensUsed: 1,
-        }),
-      })
-    })
+    const ideaChatMessages = [
+      {
+        id: 'assistant-idea-1',
+        role: 'assistant' as const,
+        content: 'Selecione sua ideia para continuar.',
+      },
+    ]
+    const freeChatMessages = [
+      {
+        id: 'assistant-free-1',
+        role: 'assistant' as const,
+        content: 'Pronto para conversar.',
+      },
+    ]
+    const getStoreForUrl = (url: string) =>
+      url.includes('idea-session') ? ideaChatMessages : freeChatMessages
 
     await page.route('**/api/chat/sessions/**', async (route) => {
-      const isIdea = route.request().url().includes('idea-session')
+      const url = route.request().url()
+      const isIdea = url.includes('idea-session')
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
@@ -74,13 +79,39 @@ test.describe('Fluxos de autenticacao e chatbot', () => {
           chatType: isIdea ? 'IDEA_BASED' : 'FREE',
           ideaId: isIdea ? '1' : null,
           tokensRemaining: 5,
-          messages: [
-            {
-              id: 'assistant-1',
-              role: 'assistant',
-              content: isIdea ? 'Selecione sua ideia para continuar.' : 'Pronto para conversar.',
-            },
-          ],
+          messages: getStoreForUrl(url),
+        }),
+      })
+    })
+
+    await page.route('**/api/chat/sessions/**/messages', async (route) => {
+      const url = route.request().url()
+      const store = getStoreForUrl(url)
+      const payload = route.request().postDataJSON?.() ?? {}
+      const userMessage = typeof payload?.message === 'string' ? payload.message.trim() : ''
+      if (userMessage) {
+        store.push({
+          id: `user-${Date.now()}`,
+          role: 'user',
+          content: userMessage,
+        })
+      }
+
+      const assistantMessage = {
+        id: `assistant-${Date.now()}`,
+        role: 'assistant' as const,
+        content: 'Resposta mockada da IA',
+      }
+      store.push(assistantMessage)
+
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          ...assistantMessage,
+          tokensRemaining: 4,
+          tokensUsed: 1,
+          messages: store,
         }),
       })
     })
