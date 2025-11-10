@@ -10,14 +10,29 @@ export default defineConfig({
     },
   },
   test: {
-    environment: 'jsdom', // Necessário para testar componentes React
-    globals: true,         // Permite usar describe/it/expect sem importar
+    environment: 'jsdom', 
+    globals: true,         
     setupFiles: ['src/test/setupTests.ts'],
     coverage: {
-      reporter: ['text', 'lcov'], // "lcov" é o formato que o Sonar lê
-      reportsDirectory: 'coverage', // cria coverage/lcov.info
+      reporter: ['text', 'lcov'], 
+      reportsDirectory: 'coverage', 
+      include: [
+        'src/components/**/*.{ts,tsx}',
+        'src/pages/**/*.{ts,tsx}',
+        'src/services/**/*.{ts,tsx}',
+        'src/lib/**/*.{ts,tsx}',
+      ],
+      exclude: [
+        'src/main.tsx',
+        'src/App.tsx',
+        'src/test/**/*',
+        'src/routes/**/*',
+        'src/types/**/*',
+        'src/constants/**/*',
+        'src/**/*.d.ts',
+      ],
     },
-    include: ['src/**/*.{test,spec}.{ts,tsx}'], // onde estão seus testes
+    include: ['src/**/*.{test,spec}.{ts,tsx}'], 
     exclude: ['node_modules', 'dist'],
   },
 })
