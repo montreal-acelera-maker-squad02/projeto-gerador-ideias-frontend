@@ -1,8 +1,8 @@
-import { describe, it, expect, beforeAll, vi } from 'vitest'
+import { beforeAll, describe, expect, it, vi } from 'vitest'
 import { screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { ChatWidget } from '../ChatWidget'
-import { renderWithProviders, createChatContextValue } from '@/test/test-utils'
+import { renderWithProviders } from '@/test/test-utils'
 
 beforeAll(() => {
   Object.defineProperty(window.HTMLElement.prototype, 'scrollIntoView', {
@@ -12,31 +12,21 @@ beforeAll(() => {
 })
 
 describe('ChatWidget', () => {
-  it('desabilita Chat Ideas quando nao ha historico', async () => {
-    renderWithProviders(<ChatWidget defaultOpen />, {
-      chatContext: createChatContextValue({
-        summaries: [],
-        summariesLoading: false,
-      }),
-    })
+  it('mostra aviso de preview quando aberto', () => {
+    renderWithProviders(<ChatWidget defaultOpen />)
 
-    const tab = screen.getByRole('button', { name: /chat ideas/i })
-    expect(tab).toBeDisabled()
-    expect(screen.getByText(/gere uma ideia primeiro/i)).toBeInTheDocument()
+    expect(screen.getByText(/preview sem integração/i)).toBeInTheDocument()
+    expect(screen.getByText(/sem integração no momento/i)).toBeInTheDocument()
   })
 
-  it('bloqueia interacoes quando os tokens acabam', async () => {
-    renderWithProviders(<ChatWidget defaultOpen />, {
-      chatContext: createChatContextValue({
-        summaries: [{ ideaId: '1', title: 'tech', summary: 'app' }],
-        tokensRemaining: 0,
-        sessionId: 'session-limit',
-      }),
-    })
+  it('simula resposta local ao enviar mensagem', async () => {
+    renderWithProviders(<ChatWidget defaultOpen />)
+    const textarea = screen.getByPlaceholderText(/digite sua mensagem/i)
 
-    const input = screen.getByPlaceholderText(/tokens indisponiveis/i) as HTMLTextAreaElement
-    expect(input).toBeDisabled()
-    await userEvent.click(screen.getByRole('button', { name: /chat livre/i }))
-    expect(screen.getByText(/seus tokens acabaram/i)).toBeInTheDocument()
+    await userEvent.type(textarea, 'Olá, tudo bem?')
+    await userEvent.click(screen.getByRole('button', { name: /enviar mensagem/i }))
+
+    expect(screen.getByText('Olá, tudo bem?')).toBeInTheDocument()
+    expect(await screen.findByText(/integração oficial chegando/i)).toBeInTheDocument()
   })
 })

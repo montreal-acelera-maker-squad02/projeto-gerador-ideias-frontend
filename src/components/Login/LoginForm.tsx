@@ -4,7 +4,6 @@ import { authService } from "@/services/authService";
 import { setAuthToken } from "@/lib/api";
 import { TextField } from "@/components/common/TextField";
 import { PasswordToggle } from "@/components/common/PasswordToggle";
-import { useChatContext } from "@/context/ChatContext";
 
 export const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -12,7 +11,6 @@ export const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const { preload } = useChatContext();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,7 +22,6 @@ export const LoginForm: React.FC = () => {
       if (data?.token) {
         setAuthToken(data.token);
         localStorage.setItem("token", data.token);
-        void preload().catch((err) => console.warn("Falha ao pre-carregar o chat", err));
       }
 
       if (data?.user) {

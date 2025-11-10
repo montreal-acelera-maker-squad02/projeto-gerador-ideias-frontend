@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import userEvent from '@testing-library/user-event'
 import { screen } from '@testing-library/react'
 import { LoginForm } from '../LoginForm'
-import { renderWithProviders, createChatContextValue } from '@/test/test-utils'
+import { renderWithProviders } from '@/test/test-utils'
 import { authService } from '@/services/authService'
 import { setAuthToken } from '@/lib/api'
 
@@ -29,7 +29,6 @@ vi.mock('@/lib/api', () => ({
 const loginMock = vi.mocked(authService.login)
 
 describe('LoginForm', () => {
-  const chatContext = createChatContextValue()
   let storageSpy: ReturnType<typeof vi.spyOn>
 
   beforeEach(() => {
@@ -47,11 +46,7 @@ describe('LoginForm', () => {
       token: 'abc123',
       user: { id: 42, name: 'Tester' },
     })
-    const preloadSpy = vi.fn().mockResolvedValue(undefined)
-
-    renderWithProviders(<LoginForm />, {
-      chatContext: createChatContextValue({ preload: preloadSpy }),
-    })
+    renderWithProviders(<LoginForm />)
 
     const user = userEvent.setup()
     await user.type(screen.getByLabelText(/email/i), 'user@example.com')
@@ -62,7 +57,6 @@ describe('LoginForm', () => {
     expect(loginMock).toHaveBeenCalledWith('user@example.com', 'Senha@123')
     expect(setAuthToken).toHaveBeenCalledWith('abc123')
     expect(storageSpy).toHaveBeenCalledWith('token', 'abc123')
-    expect(preloadSpy).toHaveBeenCalled()
     expect(mockNavigate).toHaveBeenCalledWith('/generator')
   })
 
@@ -70,7 +64,7 @@ describe('LoginForm', () => {
     loginMock.mockRejectedValue(new Error('invalid'))
     const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => undefined)
 
-    renderWithProviders(<LoginForm />, { chatContext })
+    renderWithProviders(<LoginForm />)
 
     const user = userEvent.setup()
     await user.type(screen.getByLabelText(/email/i), 'user@example.com')
