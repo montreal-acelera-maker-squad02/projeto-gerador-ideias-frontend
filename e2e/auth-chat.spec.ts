@@ -26,7 +26,13 @@ test.describe('Fluxos de autenticacao e chatbot', () => {
       await route.fulfill({
         status: 200,
         contentType: 'application/json',
-        body: JSON.stringify({ token: 'token-123', user: { id: 1, name: 'Tester' } }),
+        body: JSON.stringify({
+          accessToken: 'access-123',
+          refreshToken: 'refresh-456',
+          uuid: 'user-1',
+          name: 'Tester',
+          email: 'user@example.com',
+        }),
       })
     })
 
