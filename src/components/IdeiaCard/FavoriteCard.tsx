@@ -1,6 +1,8 @@
 import { useEffect, useRef, useState } from "react";
 import { Heart, Loader2 } from "lucide-react";
 import BaseIdeiaCard, { type BaseIdeaCardProps } from "./BaseIdeiaCard";
+import { cn } from "@/lib/utils";
+import { useTheme } from "@/hooks/useTheme";
 
 interface FavoriteCardProps
   extends Omit<
@@ -12,11 +14,6 @@ interface FavoriteCardProps
     | "showDivider"
     | "headerRight"
   > {
-  /** 
-   * Callback para (des)favoritar uma ideia.
-   * A função pode executar ações assíncronas internamente,
-   * mas **não deve retornar Promise** (garantindo compatibilidade com React).
-   */
   onToggleFavorite?: (id: string) => void;
 }
 
@@ -27,6 +24,8 @@ export default function FavoriteCard({
 }: Readonly<FavoriteCardProps>) {
   const [loading, setLoading] = useState(false);
   const isMounted = useRef(true);
+
+  const { darkMode } = useTheme();
 
   useEffect(() => {
     return () => {
@@ -79,7 +78,12 @@ export default function FavoriteCard({
       metaMode="minimal"
       showDivider={false}
       headerRight={headerRight}
-      className="bg-linear-to-r from-pink-50 to-red-50/40 border border-red-200 hover:border-red-300 transition-all-smooth"
+      className={cn(
+        darkMode
+          ? "bg-slate-900/60 border-slate-700 hover:border-slate-500"
+          : "bg-linear-to-r from-pink-50 to-red-50/40 border border-red-200 hover:border-red-300",
+        "transition-all-smooth"
+      )}
       idea={idea}
       {...props}
     />

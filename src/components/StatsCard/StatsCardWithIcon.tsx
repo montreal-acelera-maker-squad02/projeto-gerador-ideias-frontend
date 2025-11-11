@@ -2,6 +2,7 @@ import { memo, type ReactNode } from "react";
 import BaseStatsCard from "./BaseStatsCard";
 import { cn } from "@/lib/utils";
 import type { LucideIcon } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 export type StatsCardWithIconProps = {
   title: string;
@@ -28,20 +29,33 @@ export default memo(function StatsCardWithIcon({
   titleClassName,
   valueClassName,
 }: StatsCardWithIconProps) {
+  const { darkMode } = useTheme();
+
   const header = (
     <div className="flex items-center gap-3">
       <div
         className={cn(
-          "w-10 h-10 rounded-lg flex items-center justify-center bg-blue-50",
+          "w-10 h-10 rounded-lg flex items-center justify-center",
+          darkMode ? "bg-slate-800" : "bg-blue-50",
           iconBgClassName
         )}
       >
         <Icon
-          className={cn("w-5 h-5 text-blue-600", iconClassName)}
+          className={cn(
+            "w-5 h-5",
+            darkMode ? "text-blue-200" : "text-blue-600",
+            iconClassName
+          )}
           aria-hidden="true"
         />
       </div>
-      <h3 className={cn("text-sm font-light text-gray-600", titleClassName)}>
+      <h3
+        className={cn(
+          "text-sm font-light",
+          darkMode ? "text-slate-300" : "text-gray-600",
+          titleClassName
+        )}
+      >
         {title}
       </h3>
     </div>
@@ -51,13 +65,19 @@ export default memo(function StatsCardWithIcon({
     <BaseStatsCard
       header={header}
       value={
-        <p className={cn("text-4xl font-light text-gray-900", valueClassName)}>
+        <p
+          className={cn(
+            "text-4xl font-light",
+            darkMode ? "text-slate-50" : "text-gray-900",
+            valueClassName
+          )}
+        >
           {value}
         </p>
       }
       delay={delay}
       elevated={elevated}
-      className={cn("border-gray-200", className)}
+      className={className}
     />
   );
 });

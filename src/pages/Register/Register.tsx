@@ -12,7 +12,7 @@ export const RegisterPage: React.FC = () => {
         <RegisterForm />
       </main>
 
-      <AppFooter />
+      <AppFooter forceLightMode/>
     </div>
   );
 };

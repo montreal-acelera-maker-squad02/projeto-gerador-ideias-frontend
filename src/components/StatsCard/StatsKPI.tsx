@@ -1,6 +1,7 @@
 import { memo, type ReactNode } from "react";
 import BaseStatsCard from "./BaseStatsCard";
 import { cn } from "@/lib/utils";
+import { useTheme } from "@/hooks/useTheme";
 
 export type StatsKPIProps = {
   title: string;
@@ -8,9 +9,8 @@ export type StatsKPIProps = {
   delay?: 0 | 100 | 200 | 300 | 400;
   className?: string;
   elevated?: boolean;
-
-  labelClassName?: string; // default: text-sm font-light mb-3 text-gray-600
-  valueClassName?: string; // default: text-5xl font-light text-gray-900
+  labelClassName?: string;
+  valueClassName?: string;
 };
 
 export default memo(function StatsKPI({
@@ -22,8 +22,16 @@ export default memo(function StatsKPI({
   labelClassName,
   valueClassName,
 }: StatsKPIProps) {
+  const { darkMode } = useTheme();
+
   const header = (
-    <p className={cn("text-sm font-light mb-3 text-gray-600", labelClassName)}>
+    <p
+      className={cn(
+        "text-sm font-light mb-3",
+        darkMode ? "text-slate-300" : "text-gray-600",
+        labelClassName
+      )}
+    >
       {title}
     </p>
   );
@@ -32,13 +40,19 @@ export default memo(function StatsKPI({
     <BaseStatsCard
       header={header}
       value={
-        <p className={cn("text-5xl font-light text-gray-900", valueClassName)}>
+        <p
+          className={cn(
+            "text-5xl font-light",
+            darkMode ? "text-slate-50" : "text-gray-900",
+            valueClassName
+          )}
+        >
           {value}
         </p>
       }
       delay={delay}
       elevated={elevated}
-      className={cn("border-gray-200", className)}
+      className={className}
     />
   );
 });

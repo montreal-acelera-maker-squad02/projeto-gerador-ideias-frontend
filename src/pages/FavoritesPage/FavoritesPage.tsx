@@ -1,10 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import SectionContainer from "@/components/SectionContainer/SectionContainer";
 import FavoriteCard from "@/components/IdeiaCard/FavoriteCard";
-import { AppHeader } from "@/components/Header/AppHeader";
-import { AppFooter } from "@/components/Footer/AppFooter";
 import { ideaService } from "@/services/ideaService";
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
+import { useTheme } from "@/hooks/useTheme";
+import { cn } from "@/lib/utils";
 
 // 🔹 Função externa para evitar nesting excessivo dentro do componente
 async function loadFavoritesData(
@@ -25,6 +25,8 @@ export default function FavoritesPage() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
   const [loading, setLoading] = useState(true);
 
+  const { darkMode } = useTheme();
+
   // ✅ Carrega os favoritos na montagem do componente
   useEffect(() => {
     loadFavoritesData(setIdeas, setLoading);
@@ -42,14 +44,42 @@ export default function FavoritesPage() {
 
   // ✅ Separado para clareza e evitar ternários complexos
   const renderLoading = () => (
-    <SectionContainer className="rounded-2xl p-12 text-center animate-fadeIn bg-linear-to-br from-gray-50 to-pink-50/30 border border-gray-200">
-      <p className="font-light text-gray-600">Carregando favoritos...</p>
+    <SectionContainer
+      className={cn(
+        "rounded-2xl p-12 text-center animate-fadeIn border",
+        darkMode
+          ? "bg-slate-900 border-slate-800"
+          : "bg-linear-to-br from-gray-50 to-pink-50/30 border-gray-200"
+      )}
+    >
+      <p
+        className={cn(
+          "font-light",
+          darkMode ? "text-slate-200" : "text-gray-600"
+        )}
+      >
+        Carregando favoritos...
+      </p>
     </SectionContainer>
   );
 
   const renderEmpty = () => (
-    <SectionContainer className="rounded-2xl p-12 text-center animate-fadeIn bg-linear-to-br from-gray-50 to-pink-50/30 border border-gray-200">
-      <p className="font-light text-gray-600">Nenhuma ideia favorita ainda</p>
+    <SectionContainer
+      className={cn(
+        "rounded-2xl p-12 text-center animate-fadeIn border",
+        darkMode
+          ? "bg-slate-900 border-slate-800"
+          : "bg-linear-to-br from-gray-50 to-pink-50/30 border-gray-200"
+      )}
+    >
+      <p
+        className={cn(
+          "font-light",
+          darkMode ? "text-slate-200" : "text-gray-600"
+        )}
+      >
+        Nenhuma ideia favorita ainda
+      </p>
     </SectionContainer>
   );
 
@@ -73,19 +103,16 @@ export default function FavoritesPage() {
   };
 
   return (
-    <div className="min-h-screen bg-white text-gray-900 flex flex-col relative">
-      <div className="fixed top-0 left-0 right-0 h-72 pointer-events-none z-0 bg-linear-to-b from-blue-100/40 via-purple-100/30 to-transparent" />
-
-      <AppHeader />
-
-      <main className="flex-1">
-        <div className="max-w-7xl mx-auto px-8 py-12 relative z-10 animate-fadeInUp">
-          <h2 className="text-3xl font-light mb-8 text-gray-900">Favoritos</h2>
-          {renderContent()}
-        </div>
-      </main>
-
-      <AppFooter />
+    <div className="max-w-7xl mx-auto px-8 py-12 relative z-10 animate-fadeInUp">
+      <h2 className={cn("text-3xl font-light mb-8", 
+          darkMode 
+            ? "text-white" 
+            : "text-gray-900"
+        )}
+      >
+        Favoritos
+      </h2>
+      {renderContent()}
     </div>
   );
 }

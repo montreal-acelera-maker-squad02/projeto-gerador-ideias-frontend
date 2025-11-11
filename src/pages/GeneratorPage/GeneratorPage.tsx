@@ -5,10 +5,9 @@ import { Lightbulb, Clock, Star, ChevronDown, Shuffle } from "lucide-react";
 import { cn } from "@/lib/utils";
 import SectionContainer from "@/components/SectionContainer/SectionContainer";
 import IdeaResultCard from "@/components/IdeiaCard/IdeaResultCard";
-import { AppHeader } from "@/components/Header/AppHeader";
-import { AppFooter } from "@/components/Footer/AppFooter";
 import { ChatWidget } from "@/components/ChatWidget/ChatWidget";
 import AutoResizeTextarea from "@/components/AutoResizeTextarea/AutoResizeTextarea";
+import { useTheme } from "@/hooks/useTheme";
 
 const themeOptions = [
   "Tecnologia",
@@ -116,6 +115,8 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
   );
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
 
+  const { darkMode } = useTheme();
+
   const favoriteIdeas = useMemo(() => ideas.filter(i => i.isFavorite), [ideas]);
   
   const averageResponseTime = useMemo(() => {
@@ -173,185 +174,311 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
   };
     
   return (
-     <div className="min-h-screen bg-white text-gray-900 flex flex-col relative">
-      {/* Decorative gradient (light only for now) */}
-      <div className="fixed top-0 left-0 right-0 h-72 pointer-events-none z-0 bg-gradient-to-b from-blue-100/40 via-purple-100/30 to-transparent" />
-      
-      <AppHeader />
-      <main className="flex-1">
-        <div className="relative z-10 max-w-7xl mx-auto px-8 py-12">
+    <div
+      className={cn(
+        "relative z-10 max-w-7xl mx-auto px-8 py-12",
+        darkMode ? "text-slate-100" : "text-gray-900"
+      )}
+    >
 
-          {/* Hero / Controls */}
-          <SectionContainer className="relative z-30 mb-16 p-8 rounded-2xl border bg-white border-gray-300 shadow-md animate-fadeInUp">
-            <div className="max-w-3xl mx-auto">
-              <div className="mb-10 text-center">
-                <h1 className="text-4xl md:text-5xl font-bold mb-3 leading-tight">Transforme suas ideias em realidade</h1>
-                <p className="text-base font-light text-gray-600">Gere ideias criativas com inteligência artificial</p>
-              </div>
+      {/* Hero / Controls */}
+      <SectionContainer
+        className={cn(
+          "relative z-30 mb-16 p-8 rounded-2xl border shadow-md animate-fadeInUp",
+          darkMode
+            ? "bg-slate-900 border-slate-800"
+            : "bg-white border-gray-300"
+        )}
+      >
+        <div className="max-w-3xl mx-auto">
+          <div className="mb-10 text-center">
+            <h1
+              className={cn(
+                "text-4xl md:text-5xl font-bold mb-3 leading-tight",
+                darkMode ? "text-slate-50" : "text-gray-900"
+              )}
+            >
+              Transforme suas ideias em realidade
+            </h1>
+            <p
+              className={cn(
+                "text-base font-light",
+                darkMode ? "text-slate-300" : "text-gray-600"
+              )}
+            >
+              Gere ideias criativas com inteligência artificial
+            </p>
+          </div>
 
-              {/* Prompt Row */}
-              <div className="px-6 py-4 border-2 rounded-2xl transition-all relative border-gray-300 bg-white">
-                {/* Mobile */}
-                <div className="flex items-center justify-between gap-2 sm:hidden mb-2">
-                  <button
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg transition-all hover:opacity-80 bg-white"
-                    onClick={() => setShowThemeDropdown((v) => !v)}
-                  >
-                    <span
-                      className={cn(
-                        "text-sm font-light",
-                        theme ? "text-blue-600" : "text-gray-500"
-                      )}
-                    >
-                      {theme || "Escolha o tema"}
-                    </span>
-                    <ChevronDown
-                      className={cn(
-                        "w-4 h-4 transition-transform",
-                        showThemeDropdown && "rotate-180",
-                        theme ? "text-blue-600" : "text-gray-500"
-                      )}
-                    />
-                  </button>
-
-                  <span className="text-[10px] leading-none text-gray-400">
-                    {context.length}/{MAX_CONTEXT}
-                  </span>
-                </div>
-
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
-                  {/* Desktop */}
-                  <div className="hidden sm:flex items-center gap-2">
-                    <button
-                      className="flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all hover:opacity-80"
-                      onClick={() => setShowThemeDropdown((v) => !v)}
-                    >
-                      <span
-                        className={cn(
-                          "text-base font-light",
-                          theme ? "text-blue-600" : "text-gray-500"
-                        )}
-                      >
-                        {theme || "Escolha o tema"}
-                      </span>
-                      <ChevronDown
-                        className={cn(
-                          "w-5 h-5 transition-transform",
-                          showThemeDropdown && "rotate-180",
-                          theme ? "text-blue-600" : "text-gray-500"
-                        )}
-                      />
-                    </button>
-
-                    <div className="w-px h-8 bg-gray-300" />
-                  </div>
-
-                  {/* input sempre ocupa o restante */}
-                  <div className="relative flex-1">
-                    <AutoResizeTextarea
-                      value={context}
-                      onChange={(e) => setContext(e.target.value)}
-                      maxChars={MAX_CONTEXT}
-                      placeholder="Descreva o contexto ou desafio..."
-                      className="w-full bg-transparent outline-none text-base font-light placeholder:font-light text-gray-900 placeholder:text-gray-400 pr-9"
-                    />
-                    {/* contador dentro do input só no desktop */}
-                    <span className="pointer-events-none hidden sm:inline absolute right-2 top-1/2 -translate-y-1/2 text-[10px] leading-none text-gray-400">
-                      {context.length}/{MAX_CONTEXT}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Dropdown */}
-                {showThemeDropdown && (
-                  <div className="absolute top-full left-0 mt-2 w-64 rounded-xl shadow-lg border overflow-hidden z-50 bg-white border-gray-300">
-                    <div className="p-2 max-h-64 overflow-y-auto">
-                      {themeOptions.map(opt => (
-                        <button
-                          key={opt}
-                          onClick={() => { setTheme(opt); setShowThemeDropdown(false); }}
-                          className={cn(
-                            "w-full text-left px-4 py-2 rounded-lg transition-all text-sm font-light",
-                            theme === opt ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-50"
-                          )}
-                        >
-                          {opt}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
+          {/* Prompt Row */}
+          <div
+            className={cn(
+              "px-6 py-4 border-2 rounded-2xl transition-all relative",
+              darkMode
+                ? "border-slate-700 bg-slate-950/30"
+                : "border-gray-300 bg-white"
+            )}
+          >
+            {/* Mobile */}
+            <div className="flex items-center justify-between gap-2 sm:hidden mb-2">
+              <button
+                className={cn(
+                  "flex items-center gap-2 px-4 py-2 rounded-lg transition-all",
+                  darkMode
+                    ? "bg-slate-900/50 hover:bg-slate-800"
+                    : "bg-white hover:opacity-80"
                 )}
+                onClick={() => setShowThemeDropdown((v) => !v)}
+              >
+                <span
+                  className={cn(
+                    "text-sm font-light",
+                    theme
+                      ? darkMode
+                        ? "text-blue-300"
+                        : "text-blue-600"
+                      : darkMode
+                        ? "text-slate-400"
+                        : "text-gray-500"
+                  )}
+                >
+                  {theme || "Escolha o tema"}
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "w-4 h-4 transition-transform",
+                    showThemeDropdown && "rotate-180",
+                    theme
+                      ? darkMode
+                        ? "text-blue-300"
+                        : "text-blue-600"
+                      : darkMode
+                        ? "text-slate-400"
+                        : "text-gray-500"
+                  )}
+                />
+              </button>
+
+              <span
+                className={cn(
+                  "text-[10px] leading-none",
+                  darkMode ? "text-slate-400" : "text-gray-400"
+                )}
+              >
+                {context.length}/{MAX_CONTEXT}
+              </span>
+            </div>
+
+            <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
+              {/* Desktop */}
+              <div className="hidden sm:flex items-center gap-2">
+                <button
+                  className={cn(
+                    "flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all",
+                    darkMode
+                      ? "hover:bg-slate-800/80"
+                      : "hover:opacity-80"
+                  )}
+                  onClick={() => setShowThemeDropdown((v) => !v)}
+                >
+                  <span
+                    className={cn(
+                      "text-base font-light",
+                      theme
+                        ? darkMode
+                          ? "text-blue-300"
+                          : "text-blue-600"
+                        : darkMode
+                          ? "text-slate-400"
+                          : "text-gray-500"
+                    )}
+                  >
+                    {theme || "Escolha o tema"}
+                  </span>
+                  <ChevronDown
+                    className={cn(
+                      "w-5 h-5 transition-transform",
+                      showThemeDropdown && "rotate-180",
+                      theme
+                        ? darkMode
+                          ? "text-blue-300"
+                          : "text-blue-600"
+                        : darkMode
+                          ? "text-slate-400"
+                          : "text-gray-500"
+                    )}
+                  />
+                </button>
+
+                <div
+                  className={cn(
+                    "w-px h-8",
+                    darkMode ? "bg-slate-700" : "bg-gray-300"
+                  )}
+                />
               </div>
 
-              {/* Actions */}
-              <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
-                <button
-                  onClick={() => generateIdea()}
-                  disabled={!theme.trim() || !context.trim() || isLoading}
-                  className="px-10 py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-600 text-white font-semibold text-base transition-all shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+              {/* input sempre ocupa o restante */}
+              <div className="relative flex-1">
+                <AutoResizeTextarea
+                  value={context}
+                  onChange={(e) => setContext(e.target.value)}
+                  maxChars={MAX_CONTEXT}
+                  placeholder="Descreva o contexto ou desafio..."
+                  className={cn(
+                    "w-full bg-transparent outline-none text-base font-light pr-9",
+                    darkMode
+                      ? "text-slate-100 placeholder:text-slate-500"
+                      : "text-gray-900 placeholder:text-gray-400"
+                  )}
+                />
+                {/* contador dentro do input só no desktop */}
+                <span
+                  className={cn(
+                    "pointer-events-none hidden sm:inline absolute right-2 top-1/2 -translate-y-1/2 text-[10px] leading-none",
+                    darkMode ? "text-slate-500" : "text-gray-400"
+                  )}
                 >
-                  {isLoading ? "Gerando..." : "Gerar Ideia"}
-                </button>
-                <button
-                  onClick={surpriseMe}
-                  disabled={isLoading}
-                  className="px-8 py-3.5 rounded-lg border font-light text-base transition-all flex items-center gap-2 border-gray-400 text-gray-700 hover:bg-gray-50 hover:border-gray-500"
-                >
-                  <Shuffle className="w-5 h-5" />
-                  Surpreenda-me
-                </button>
+                  {context.length}/{MAX_CONTEXT}
+                </span>
               </div>
             </div>
-          </SectionContainer>
 
-          {/* Result */}
-          <div className="animate-fadeInUp animation-delay-400">
-            <h2 className="text-2xl font-light mb-6">Resultado</h2>
-
-            {currentIdea ? (
-              <IdeaResultCard
-                idea={currentIdea}
-                onToggleFavorite={(id) => toggleFavorite(id)}
-                onCopy={() => {}}
-                onShare={() => {}}
-              />            
-            ) : (
-              <SectionContainer className="rounded-2xl p-12 text-center animate-fadeIn border bg-white border-gray-200" >
-                <p className="text-lg font-light text-gray-600">Digite um tema e contexto para gerar sua primeira ideia criativa</p>
-              </SectionContainer>
+            {/* Dropdown */}
+            {showThemeDropdown && (
+              <div
+                className={cn(
+                  "absolute top-full left-0 mt-2 w-64 rounded-xl shadow-lg border overflow-hidden z-50",
+                  darkMode
+                    ? "bg-slate-900 border-slate-700"
+                    : "bg-white border-gray-300"
+                )}
+              >
+                <div className="p-2 max-h-64 overflow-y-auto">
+                  {themeOptions.map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => {
+                        setTheme(opt);
+                        setShowThemeDropdown(false);
+                      }}
+                      className={cn(
+                        "w-full text-left px-4 py-2 rounded-lg transition-all text-sm font-light",
+                        theme === opt
+                          ? darkMode
+                            ? "bg-blue-500/10 text-blue-200"
+                            : "bg-blue-50 text-blue-600"
+                          : darkMode
+                            ? "text-slate-100 hover:bg-slate-800/60"
+                            : "text-gray-700 hover:bg-gray-50"
+                      )}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 
-          {/* Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
-            <StatsCardWithIcon
-              title="Ideias geradas"
-              value={ideas.length}
-              Icon={Lightbulb}
-              className="animation-delay-0"
-            />
-            <StatsCardWithIcon
-              title="Tempo médio"
-              value={
-                <span>
-                  {averageResponseTime} <span className="text-lg font-light text-gray-500">ms</span>
-                </span>
-              }
-              Icon={Clock}
-              delay={100}
-            />
-            <StatsCardWithIcon
-              title="Favoritas"
-              value={favoriteIdeas.length}
-              Icon={Star}
-              delay={200}
-            />
+          {/* Actions */}
+          <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
+            <button
+              onClick={() => generateIdea()}
+              disabled={!theme.trim() || !context.trim() || isLoading}
+              className="px-10 py-4 rounded-xl bg-gradient-to-r from-purple-500 to-blue-600 text-white font-semibold text-base transition-all shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+            >
+              {isLoading ? "Gerando..." : "Gerar Ideia"}
+            </button>
+            <button
+              onClick={surpriseMe}
+              disabled={isLoading}
+              className={cn(
+                "px-8 py-3.5 rounded-lg border font-light text-base transition-all flex items-center gap-2",
+                darkMode
+                  ? "border-slate-500 text-slate-100 hover:bg-slate-800"
+                  : "border-gray-400 text-gray-700 hover:bg-gray-50 hover:border-gray-500"
+              )}
+            >
+              <Shuffle className="w-5 h-5" />
+              Surpreenda-me
+            </button>
           </div>
         </div>
-      </main>
-      {disableChatWidget ? null : <ChatWidget />}
+      </SectionContainer>
 
-      <AppFooter />
+      {/* Result */}
+      <div className="animate-fadeInUp animation-delay-400">
+        <h2
+          className={cn(
+            "text-2xl font-light mb-6",
+            darkMode ? "text-slate-100" : "text-gray-900"
+          )}
+        >
+          Resultado
+        </h2>
+
+        {currentIdea ? (
+          <IdeaResultCard
+            idea={currentIdea}
+            onToggleFavorite={(id) => toggleFavorite(id)}
+            onCopy={() => {}}
+            onShare={() => {}}           
+          />            
+        ) : (
+          <SectionContainer
+            className={cn(
+              "rounded-2xl p-12 text-center animate-fadeIn border",
+              darkMode
+                ? "bg-slate-900 border-slate-800"
+                : "bg-white border-gray-200"
+            )}
+          >
+            <p
+              className={cn(
+                "text-lg font-light",
+                darkMode ? "text-slate-300" : "text-gray-600"
+              )}
+            >
+              Digite um tema e contexto para gerar sua primeira ideia criativa
+            </p>
+          </SectionContainer>
+        )}
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-12">
+        <StatsCardWithIcon
+          title="Ideias geradas"
+          value={ideas.length}
+          Icon={Lightbulb}
+          className="animation-delay-0"
+        />
+        <StatsCardWithIcon
+          title="Tempo médio"
+          value={
+            <span>
+              {averageResponseTime} <span
+                className={cn(
+                  "text-lg font-light",
+                  darkMode ? "text-slate-300" : "text-gray-500"
+                )}
+              >
+                ms
+              </span>
+            </span>
+          }
+          Icon={Clock}
+          delay={100}
+        />
+        <StatsCardWithIcon
+          title="Favoritas"
+          value={favoriteIdeas.length}
+          Icon={Star}
+          delay={200}
+        />
+      </div>
+      {disableChatWidget ? null : <ChatWidget />}
     </div>
   );
 };
