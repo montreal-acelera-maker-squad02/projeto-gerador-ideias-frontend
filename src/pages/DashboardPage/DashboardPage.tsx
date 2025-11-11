@@ -13,6 +13,7 @@ import {
   Bar,
   Cell,
 } from "recharts";
+import { useTheme } from "@/hooks/useTheme";
 
 export type Idea = {
   id: string;
@@ -29,6 +30,8 @@ export type DashboardPageProps = {
 };
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ ideas = [] }) => {
+  const { darkMode } = useTheme();
+  
   const favoriteIdeas = useMemo(
     () => ideas.filter((i) => i.isFavorite),
     [ideas]
@@ -53,56 +56,100 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ ideas = [] }) => {
 
   return (
     <div className="max-w-7xl mx-auto px-8 py-12">
-      <h2 className="text-3xl font-light mb-8 text-gray-900">Dashboard</h2>
+      <h2 className={cn("text-3xl font-light mb-8", 
+          darkMode 
+            ? "text-white" 
+            : "text-gray-900"
+        )}
+      >
+        Dashboard
+      </h2>
 
       {/* Summary row */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatsKPI
           title="Total de Ideias"
           value={ideas.length}
-          className={cn(
-            "animate-fadeInUp hover-lift border bg-white border-gray-200 rounded-2xl"
-          )}
+          className="animate-fadeInUp"
         />
         <StatsKPI
           title="Favoritos"
           value={favoriteIdeas.length}
-          className={cn(
-            "animate-fadeInUp animation-delay-100 hover-lift border bg-white border-gray-200 rounded-2xl"
-          )}
+          className="animate-fadeInUp animation-delay-100"
         />
         <StatsKPI
           title="Tempo Médio"
           value={
             <span>
               {averageResponseTime}
-              <span className="text-sm text-gray-500 ml-1">ms</span>
+              <span
+                className={cn(
+                  "text-sm ml-1 font-light",
+                  darkMode ? "text-slate-300" : "text-gray-500"
+                )}
+              >
+                ms
+              </span>
             </span>
           }
-          className={cn(
-            "animate-fadeInUp animation-delay-200 hover-lift border bg-white border-gray-200 rounded-2xl"
-          )}
+          className="animate-fadeInUp animation-delay-200"
         />
       </div>
 
       {/* Ideas by Theme */}
       {ideas.length > 0 ? (
-        <SectionContainer className="bg-white border border-gray-200 rounded-2xl p-8 mt-8 animate-fadeInUp animation-delay-300">
-          <p className="text-lg font-light mb-6 text-gray-700">Ideias por Tema</p>
+        <SectionContainer
+          className={cn(
+            "rounded-2xl p-8 mt-8 animate-fadeInUp animation-delay-300 border",
+            darkMode
+              ? "bg-slate-900 border-slate-800"
+              : "bg-white border-gray-200"
+          )}
+        >
+          <p
+            className={cn(
+              "text-lg font-light mb-6",
+              darkMode ? "text-slate-100" : "text-gray-700"
+            )}
+          >
+            Ideias por Tema
+          </p>
           <div className="w-full h-[300px]">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={byTheme}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                <XAxis dataKey="tema" stroke="#6b7280" />
-                <YAxis stroke="#6b7280" />
+                <CartesianGrid 
+                  strokeDasharray="3 3" 
+                  stroke={darkMode ? "#475569" : "#e5e7eb"} 
+                />
+                <XAxis dataKey="tema" stroke={darkMode ? "#cbd5e1" : "#6b7280"} />
+                <YAxis stroke={darkMode ? "#cbd5e1" : "#6b7280"} />
                 <Tooltip
                   contentStyle={{
-                    background: "white",
-                    border: "1px solid #e5e7eb",
+                    background: darkMode ? "#1e293b" : "white",
+                    border: darkMode
+                      ? "1px solid #334155"
+                      : "1px solid #e5e7eb",
                     borderRadius: 8,
                   }}
+                  labelStyle={{
+                    color: darkMode ? "#e2e8f0" : "#0f172a",
+                  }}
+                  itemStyle={{
+                    color: darkMode ? "#e2e8f0" : "#0f172a",
+                  }}
+                  cursor={{
+                    fill: darkMode
+                      ? "rgba(20, 28, 45, 0.35)" // slate-900 com alpha
+                      : "rgba(226, 232, 240, 0.4)", // slate-200-ish
+                  }}
                 />
-                <Bar dataKey="quantidade" radius={[8, 8, 0, 0]}>
+                <Bar 
+                  dataKey="quantidade" 
+                  radius={[8, 8, 0, 0]}
+                  activeBar={{
+                    fill: darkMode ? "rgba(61, 64, 241, 0.35)" : "rgba(59, 130, 246, 0.15)",
+                  }}
+                >
                   {byTheme.map(({ tema }, i) => (
                     <Cell key={tema} fill={palette[i % palette.length]} />
                   ))}

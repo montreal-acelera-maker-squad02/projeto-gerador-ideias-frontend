@@ -1,23 +1,29 @@
 import { Heart, Trash2 } from "lucide-react";
 import BaseIdeaCard, { type BaseIdeaCardProps } from "./BaseIdeiaCard";
+import { useTheme } from "@/hooks/useTheme";
+import { cn } from "@/lib/utils";
 
 export default function IdeaHistoryCard(
-  props: Readonly<Omit<
-    BaseIdeaCardProps,
-    | "density"
-    | "clampLines"
-    | "actions"
-    | "metaMode"
-    | "showDivider"
-    | "headerRight"
-    | "footerRight"
-  >>
+  props: Readonly<
+    Omit<
+      BaseIdeaCardProps,
+      | "density"
+      | "clampLines"
+      | "actions"
+      | "metaMode"
+      | "showDivider"
+      | "headerRight"
+      | "footerRight"
+    >
+  >
 ) {
-  const listSurfaceLight =
-    "bg-gradient-to-r from-gray-50 to-blue-50/30 border border-gray-200 hover:border-blue-300 hover-lift transition-all-smooth";
-  // const listSurfaceDark =
-  //   "dark:bg-gradient-to-r dark:from-slate-800 dark:to-slate-700/50 dark:border-slate-700";
 
+const { darkMode } = useTheme();
+
+  const listSurface = darkMode
+    ? "bg-slate-900/50 border border-slate-700 hover:border-slate-500"
+    : "bg-gradient-to-r from-gray-50 to-blue-50/30 border border-gray-200 hover:border-blue-300 hover-lift transition-all-smooth";
+  
   const headerRight = (
     <button
       aria-label="Favoritar"
@@ -29,12 +35,14 @@ export default function IdeaHistoryCard(
       }}
     >
       <Heart
-        className={
-          "w-4 h-4 transition-all " +
-          (props.idea.isFavorite
+        className={cn(
+          "w-4 h-4 transition-all",
+          props.idea.isFavorite
             ? "fill-red-500 text-red-500"
-            : "text-gray-500 hover:text-red-500")
-        }
+            : darkMode
+              ? "text-slate-300 hover:text-red-400"
+              : "text-gray-500 hover:text-red-500"
+        )}
       />
     </button>
   );
@@ -42,7 +50,12 @@ export default function IdeaHistoryCard(
   const footerRight = (
     <button
       aria-label="Excluir"
-      className="opacity-0 group-hover:opacity-100 transition-all-smooth p-1 text-red-600 hover:bg-red-100/50 rounded hover:scale-110 cursor-pointer"
+      className={cn(
+        "opacity-0 group-hover:opacity-100 transition-all-smooth p-1 rounded hover:scale-110 cursor-pointer",
+        darkMode
+          ? "text-red-400 hover:bg-red-500/10"
+          : "text-red-600 hover:bg-red-100/50"
+      )}
       title="Excluir"
       onClick={(e) => {
         e.stopPropagation();
@@ -62,7 +75,7 @@ export default function IdeaHistoryCard(
       showDivider={false}
       headerRight={headerRight}
       footerRight={footerRight}
-      className={`${listSurfaceLight}`}
+      className={`${listSurface}`}
       {...props}
     />
   );

@@ -1,9 +1,8 @@
 ﻿import { useEffect, useId, useState } from 'react'
 import { THEMES } from '@/constants/themes'
+import { cn } from "@/lib/utils";
+import { useTheme } from "@/hooks/useTheme";
 
-function cn(...classes: Array<string | false | null | undefined>) {
-  return classes.filter(Boolean).join(' ')
-}
 
 type Option = { label: string; value: string }
 
@@ -18,7 +17,7 @@ export type FilterHistoryProps = {
 }
 
 export default function FilterHistory({
-  darkMode = false,
+  darkMode,
   fixed = false,
   categories = [{ label: 'Todas', value: '' }, ...THEMES],
   value,
@@ -26,6 +25,10 @@ export default function FilterHistory({
   onClear,
   className = '',
 }: FilterHistoryProps) {
+  const { darkMode: ctxDark } = useTheme();
+
+  const isDark = typeof darkMode === "boolean" ? darkMode : ctxDark;
+
   const categoryId = useId()
   const startId = useId()
   const endId = useId()
@@ -48,7 +51,6 @@ export default function FilterHistory({
   const startDate = value ? (value.startDate ?? '') : internalStart
   const endDate = value ? (value.endDate ?? '') : internalEnd
 
-  const isDark = !!darkMode
   const containerCls = cn(
     fixed && 'fixed top-6 left-6 z-10',
     'fh-container',
@@ -84,8 +86,17 @@ export default function FilterHistory({
     <div className={containerCls}>
       {/* Header */}
       <div className="fh-header">
-        <FilterIcon className={cn('fh-icon', isDark ? 'fh-icon-dark' : 'fh-icon-light')} />
-        <h3 className={cn('fh-title', isDark ? 'fh-title-dark' : 'fh-title-light')}>Filtros</h3>
+        <FilterIcon
+          className={cn("fh-icon", isDark ? "fh-icon-dark" : "fh-icon-light")}
+        />
+        <h3
+          className={cn(
+            "fh-title",
+            isDark ? "fh-title-dark" : "fh-title-light"
+          )}
+        >
+          Filtros
+        </h3>
       </div>
 
       <div className="fh-sections">
