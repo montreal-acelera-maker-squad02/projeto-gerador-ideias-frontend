@@ -10,99 +10,36 @@ import AutoResizeTextarea from "@/components/AutoResizeTextarea/AutoResizeTextar
 import { useTheme } from "@/hooks/useTheme";
 import { emitHistoryRefreshRequest } from "@/events/historyEvents";
 import { themeService, type Theme } from "@/services/themeService";
-import { AppFooter } from "@/components/Footer/AppFooter";
-
-const themeOptions = [
-  "Tecnologia",
-  "Educacao",
-  "Marketing",
-  "Viagem",
-  "Saude",
-  "Negocio",
-  "Arte",
-  "Sustentabilidade",
-  "Gaming",
-  "Musica",
-];
-
-const sampleIdeas: Record<string, string[]> = {
-  Tecnologia: [
-    "IA que aprende com cada usuário e se adapta ao estilo de trabalho individual",
-    "Plataforma de código aberto que permite criar assistentes de IA personalizados",
-    "Sistema de backup quântico que protege dados contra qualquer tipo de falha",
-  ],
-  Educacao: [
-    "App que gamifica o aprendizado com desafios e recompensas diárias",
-    "Plataforma de mentoria onde alunos ensinam uns aos outros",
-    "Tutor de IA que se adapta ao estilo de aprendizado de cada pessoa",
-  ],
-  Marketing: [
-    "Ferramenta que gera campanhas virais baseada em tendências em tempo real",
-    "Plataforma de influenciadores que conecta marcas com criadores micro",
-    "Dashboard que prediz o sucesso de campanhas antes do lançamento",
-  ],
-  Viagem: [
-    "App que conecta viajantes com moradores para experiências autênticas",
-    "Guia de viagem inteligente que aprende suas preferências",
-    "Plataforma de trocas de casa segura com verificação biométrica",
-  ],
-  Saude: [
-    "Wearable que detecta doenças 6 meses antes dos sintomas",
-    "App de meditação com VR para terapia personalizada",
-    "Sistema de telemedicina que funciona offline com IA",
-  ],
-  Negocio: [
-    "Marketplace onde IA faz orçamentos automáticos",
-    "Plataforma de consultoria com CEOs juniores mentorados",
-    "Seguro de crédito baseado em dados comportamentais",
-  ],
-  Arte: [
-    "App para artistas colaborarem em tempo real online",
-    "Galeria virtual imersiva com obras animadas",
-    "Ferramenta que transforma sentimentos em arte abstrata",
-  ],
-  Sustentabilidade: [
-    "App que calcula pegada de carbono em tempo real",
-    "Marketplace de produtos sustentáveis com impacto social",
-    "IA que otimiza rotas de entrega para reduzir emissões",
-  ],
-  Gaming: [
-    "Motor de jogos que cria mundos procedurais infinitos",
-    "Plataforma de eSports com IA anti-cheating",
-    "Streaming de jogos com latência zero usando computação quântica",
-  ],
-  Musica: [
-    "App que compõe música baseada em seu humor",
-    "Plataforma de colaboração de música em tempo real",
-    "IA que remixea suas músicas favoritas ao vivo",
-  ],
-};
-
-const pickRandom = <T,>(arr: readonly T[]) =>
-  arr[Math.floor(Math.random() * arr.length)];
-
-const RANDOM_CONTEXTS = [
-  "Inovação disruptiva",
-  "Sustentabilidade",
-  "Experiência do usuário",
-  "Integração com IA",
-  "Modelo escalável",
-] as const;
+import { useTheme } from "@/hooks/useTheme";
+import { ideaService } from "@/services/ideaService";
 
 const MAX_CONTEXT = 50;
 
-export const GeneratorPage: React.FC = () => {
-  const { darkMode } = useTheme(); // ✅ pega o modo escuro do contexto
+type GeneratorPageProps = {
+  defaultContext?: string;
+  initialIdeas?: Idea[];
+  initialCurrentIdea?: Idea | null;
+  disableChatWidget?: boolean;
+};
+
+export const GeneratorPage: React.FC<GeneratorPageProps> = ({
+  defaultContext = "",
+  initialIdeas = [],
+  initialCurrentIdea = null,
+  disableChatWidget = false,
+}) => {
+  const { darkMode } = useTheme();
   const [themes, setThemes] = useState<Theme[]>([]);
-  const [theme, setTheme] = useState("");
-  const [context, setContext] = useState("");
+  const [theme, setTheme] = useState<number | null>(null);
+  const [context, setContext] = useState(defaultContext);
   const [isLoading, setIsLoading] = useState(false);
-  const [ideas, setIdeas] = useState<Idea[]>([]);
-  const [currentIdea, setCurrentIdea] = useState<Idea | null>(null);
+  const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
+  const [currentIdea, setCurrentIdea] = useState<Idea | null>(
+    initialCurrentIdea ?? initialIdeas[0] ?? null
+  );
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
-  const toggleThemeDropdown = useCallback(() => {
-    setShowThemeDropdown((prev) => !prev);
-  }, []);
+  const [error, setError] = useState<string | null>(null);
+  const [hasGenerated, setHasGenerated] = useState(false);
 
   // 🔄 Carrega temas da API
   useEffect(() => {
@@ -112,47 +49,54 @@ export const GeneratorPage: React.FC = () => {
         setThemes(data);
       } catch (err) {
         console.error("Erro ao carregar temas:", err);
+        setError("Não foi possível carregar os temas.");
       }
     }
     loadThemes();
   }, []);
 
+  useEffect(() => {
+    setHasGenerated(false);
+  }, [theme, context]);
+
   const favoriteIdeas = useMemo(() => ideas.filter(i => i.isFavorite), [ideas]);
 
   const averageResponseTime = useMemo(() => {
     if (ideas.length === 0) return 0;
-    const sum = ideas.reduce((acc, i) => acc + (i.responseTime || 0), 0);
-    return Math.round(sum / ideas.length);
+    const validTimes = ideas.map(i => i.responseTime || 0).filter(t => t > 0);
+    if (validTimes.length === 0) return 0;
+    const sum = validTimes.reduce((acc, i) => acc + i, 0);
+    return Math.round(sum / validTimes.length);
   }, [ideas]);
 
-  const generateIdea = async (themeOverride?: string, contextOverride?: string) => {
-    const themeToUse = themeOverride ?? theme;
+  const generateIdea = async (themeIdOverride?: number, contextOverride?: string) => {
+    const themeIdToUse = themeIdOverride ?? theme;
     const contextToUse = contextOverride ?? context;
 
-    if (!themeToUse.trim() || !contextToUse.trim() || isLoading) return;
+    if (!themeIdToUse || !contextToUse.trim() || isLoading) return;
 
     setIsLoading(true);
-    const startTime = Date.now();
+    setError(null);
 
-    const ideaList = sampleIdeas[themeToUse] || sampleIdeas["Tecnologia"];
-    const randomIdea = pickRandom(ideaList);
-    const responseTime = Date.now() - startTime;
+    const isSurprise = !!themeIdOverride;
+    const skipCache = hasGenerated || isSurprise;
 
-    await new Promise(r => setTimeout(r, 800));
+    try {
+      const newIdea = await ideaService.generateIdea(
+        themeIdToUse,
+        contextToUse,
+        skipCache
+      );
 
-    const newIdea: Idea = {
-      id: String(Date.now()),
-      theme: themeToUse,
-      context: contextToUse,
-      content: randomIdea,
-      timestamp: new Date(),
-      isFavorite: false,
-      responseTime,
-    };
-
-    setCurrentIdea(newIdea);
-    setIdeas(prev => [newIdea, ...prev]);
-    setIsLoading(false);
+      setCurrentIdea(newIdea);
+      setIdeas(prev => [newIdea, ...prev]);
+      setHasGenerated(true);
+    } catch (err: any) {
+      console.error("Falha ao gerar ideia:", err);
+      setError(err.message || "Não foi possível gerar a ideia. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const themeLabel = theme || "Escolha o tema";
@@ -204,17 +148,50 @@ export const GeneratorPage: React.FC = () => {
   };
 
   const surpriseMe = async () => {
-    const t = pickRandom(themes.length ? themes.map(th => th.name) : ["Tecnologia"]);
-    const c = pickRandom(RANDOM_CONTEXTS);
-    setTheme(t);
-    setContext(c);
-    await generateIdea(t, c);
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const newIdea = await ideaService.generateSurpriseIdea();
+
+      setCurrentIdea(newIdea);
+      setIdeas(prev => [newIdea, ...prev]);
+
+      const themeLabel = (newIdea.theme || "").toLowerCase();
+      const matchedTheme = themes.find(opt => (opt.name || "").toLowerCase() === themeLabel);
+      
+      setTheme(matchedTheme?.id ?? null);
+      setContext(newIdea.context || "");
+
+    } catch (err: any) {
+      console.error("Falha ao gerar ideia surpresa:", err);
+      setError(err.message || "Não foi possível gerar a ideia. Tente novamente.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  const toggleFavorite = (id: string) => {
-    setIdeas(prev => prev.map(i => (i.id === id ? { ...i, isFavorite: !i.isFavorite } : i)));
-    setCurrentIdea(prev => (prev?.id === id ? { ...prev, isFavorite: !prev.isFavorite } : prev));
+  const toggleFavorite = async (id: string) => {
+    const idea = ideas.find((i) => i.id === id);
+    if (!idea) return;
+
+    const newIsFavorite = !idea.isFavorite;
+
+    setIdeas(prev => prev.map(i => (i.id === id ? { ...i, isFavorite: newIsFavorite } : i)));
+    setCurrentIdea(prev => (prev?.id === id ? { ...prev, isFavorite: newIsFavorite } : prev));
+
+    try {
+      await ideaService.toggleFavorite(String(id), newIsFavorite);
+    } catch (err) {
+      console.error("Erro ao (des)favoritar:", err);
+      setIdeas(prev => prev.map(i => (i.id === id ? { ...i, isFavorite: !newIsFavorite } : i)));
+      setCurrentIdea(prev => (prev?.id === id ? { ...prev, isFavorite: !newIsFavorite } : prev));
+    }
   };
+
+  const selectedThemeLabel = useMemo(() => {
+    return themes.find(opt => opt.id === theme)?.name || "Escolha o tema";
+  }, [theme, themes]);
 
   return (
     <div
@@ -282,11 +259,11 @@ export const GeneratorPage: React.FC = () => {
                             ? "text-blue-400"
                             : "text-blue-600"
                           : darkMode
-                            ? "text-slate-400"
-                            : "text-gray-500"
+                          ? "text-slate-400"
+                          : "text-gray-500"
                       )}
                     >
-                      {theme || "Escolha o tema"}
+                      {selectedThemeLabel}
                     </span>
                     <ChevronDown
                       className={cn(
@@ -297,8 +274,8 @@ export const GeneratorPage: React.FC = () => {
                             ? "text-blue-400"
                             : "text-blue-600"
                           : darkMode
-                            ? "text-slate-400"
-                            : "text-gray-500"
+                          ? "text-slate-400"
+                          : "text-gray-500"
                       )}
                     />
                   </button>
@@ -313,22 +290,27 @@ export const GeneratorPage: React.FC = () => {
                       )}
                     >
                       <div className="p-2 max-h-64 overflow-y-auto">
+                        {themes.length === 0 && (
+                          <span className={cn("block text-center px-4 py-2 text-sm", darkMode ? "text-slate-400" : "text-gray-500")}>
+                            Carregando temas...
+                          </span>
+                        )}
                         {themes.map(t => (
                           <button
                             key={t.id}
                             onClick={() => {
-                              setTheme(t.name);
+                              setTheme(t.id ?? null);
                               setShowThemeDropdown(false);
                             }}
                             className={cn(
                               "w-full text-left px-4 py-2 rounded-lg transition-all text-sm font-light",
-                              theme === t.name
+                              theme === t.id
                                 ? darkMode
                                   ? "bg-blue-900/30 text-blue-400"
                                   : "bg-blue-50 text-blue-600"
                                 : darkMode
-                                  ? "text-slate-300 hover:bg-slate-700"
-                                  : "text-gray-700 hover:bg-gray-50"
+                                ? "text-slate-300 hover:bg-slate-700"
+                                : "text-gray-700 hover:bg-gray-50"
                             )}
                           >
                             {t.name}
@@ -338,8 +320,14 @@ export const GeneratorPage: React.FC = () => {
                     </div>
                   )}
                 </div>
+                
+                <div
+                  className={cn(
+                    "w-px h-8 hidden sm:block",
+                    darkMode ? "bg-slate-700" : "bg-gray-300"
+                  )}
+                />
 
-                {/* Campo de texto */}
                 <div className="relative flex-1">
                   <AutoResizeTextarea
                     value={context}
@@ -365,11 +353,14 @@ export const GeneratorPage: React.FC = () => {
               </div>
             </div>
 
-            {/* Botões */}
+            {error && (
+              <p className="text-center text-red-600 text-sm mt-4">{error}</p>
+            )}
+
             <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
               <button
                 onClick={() => generateIdea()}
-                disabled={!theme.trim() || !context.trim() || isLoading}
+                disabled={!theme || !context.trim() || isLoading}
                 className={cn(
                   "px-10 py-4 rounded-xl font-semibold text-base transition-all shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100",
                   darkMode
@@ -377,7 +368,11 @@ export const GeneratorPage: React.FC = () => {
                     : "bg-linear-to-r from-purple-500 to-blue-600 text-white"
                 )}
               >
-                {isLoading ? "Gerando..." : "Gerar Ideia"}
+                {isLoading
+                  ? "Gerando..."
+                  : hasGenerated
+                  ? "Gerar Outra Ideia"
+                  : "Gerar Ideia"}
               </button>
               <button
                 onClick={surpriseMe}
@@ -458,8 +453,7 @@ export const GeneratorPage: React.FC = () => {
         </div>
       </main>
 
-      <ChatWidget />
-      <AppFooter />
+      {!disableChatWidget && <ChatWidget />}
     </div>
   );
 };
