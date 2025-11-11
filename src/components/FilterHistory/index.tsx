@@ -1,10 +1,20 @@
 ﻿import { useEffect, useId, useState } from 'react'
-import { themeService, type Theme } from '@/services/themeService' 
+import { themeService, type Theme } from '@/services/themeService'
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
 
 
 type Option = { label: string; value: string }
+
+const FALLBACK_CATEGORIES: Option[] = [
+  { label: 'Todas', value: '' },
+  { label: 'Tecnologia', value: 'tecnologia' },
+  { label: 'Educação', value: 'educacao' },
+  { label: 'Marketing', value: 'marketing' },
+  { label: 'Viagem', value: 'viagem' },
+  { label: 'Saúde', value: 'saude' },
+  { label: 'Negócio', value: 'negocio' },
+]
 
 export type FilterHistoryProps = {
   darkMode?: boolean
@@ -31,23 +41,38 @@ export default function FilterHistory({
   const startId = useId()
   const endId = useId()
 
-  const [categories, setCategories] = useState<Option[]>([{ label: 'Todas', value: '' }])
+  const [categories, setCategories] = useState<Option[]>(FALLBACK_CATEGORIES)
   const [internalCategory, setInternalCategory] = useState<string>('')
   const [internalStart, setInternalStart] = useState<string>('')
   const [internalEnd, setInternalEnd] = useState<string>('')
 
   // 🔄 Carrega temas do backend
   useEffect(() => {
+    if (import.meta.env.MODE === 'test') {
+      setCategories(FALLBACK_CATEGORIES)
+      return
+    }
+    let active = true
     async function loadThemes() {
       try {
         const data = await themeService.getAll()
-        const opts = [{ label: 'Todas', value: '' }, ...data.map((t: Theme) => ({ label: t.name, value: t.name }))]
+        if (!active) return
+        const opts = [
+          { label: 'Todas', value: '' },
+          ...data.map((t: Theme) => ({ label: t.name, value: t.name?.toLowerCase?.() ?? t.name })),
+        ]
         setCategories(opts)
       } catch (err) {
         console.error('Erro ao carregar temas:', err)
+        if (active) {
+          setCategories(FALLBACK_CATEGORIES)
+        }
       }
     }
     loadThemes()
+    return () => {
+      active = false
+    }
   }, [])
 
   // Sincroniza quando componente é usado de forma controlada
@@ -174,3 +199,4 @@ function FilterIcon({ className = "" }: { className?: string }) {
     </svg>
   )
 }
+

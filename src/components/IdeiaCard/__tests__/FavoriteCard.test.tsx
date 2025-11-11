@@ -1,8 +1,9 @@
-import { render, screen, waitFor } from '@testing-library/react'
+import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { describe, expect, it, vi } from 'vitest'
 import FavoriteCard from '../FavoriteCard'
 import type { BaseIdeaCardProps } from '../BaseIdeiaCard'
+import { renderWithProviders } from '@/test/test-utils'
 
 vi.mock('@/lib/utils', () => ({
   cn: (...classes: any[]) => classes.filter(Boolean).join(' '),
@@ -28,7 +29,7 @@ const mockIdea: BaseIdeaCardProps['idea'] = {
 
 describe('FavoriteCard', () => {
   it('renderiza corretamente as informações do card', () => {
-    render(<FavoriteCard idea={mockIdea} onToggleFavorite={() => {}} />)
+    renderWithProviders(<FavoriteCard idea={mockIdea} onToggleFavorite={() => {}} />)
 
     expect(screen.getByText(/inovação/i)).toBeInTheDocument()
     expect(screen.getByText(/uma ideia incrível/i)).toBeInTheDocument()
@@ -38,7 +39,7 @@ describe('FavoriteCard', () => {
     const user = userEvent.setup()
     const onToggleFavorite = vi.fn()
 
-    render(<FavoriteCard idea={mockIdea} onToggleFavorite={onToggleFavorite} />)
+    renderWithProviders(<FavoriteCard idea={mockIdea} onToggleFavorite={onToggleFavorite} />)
 
     const button = screen.getByRole('button', { name: /desfavoritar/i })
 
@@ -54,7 +55,7 @@ describe('FavoriteCard', () => {
     const user = userEvent.setup()
     const onToggleFavorite = vi.fn(() => new Promise(res => setTimeout(res, 200)))
 
-    render(<FavoriteCard idea={mockIdea} onToggleFavorite={onToggleFavorite} />)
+    renderWithProviders(<FavoriteCard idea={mockIdea} onToggleFavorite={onToggleFavorite} />)
     const button = screen.getByRole('button', { name: /desfavoritar/i })
 
     await user.click(button)

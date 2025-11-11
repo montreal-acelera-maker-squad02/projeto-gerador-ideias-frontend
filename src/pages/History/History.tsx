@@ -233,7 +233,7 @@ export default function HistoryPage() {
                     currentPage <= 1 && 'opacity-40 cursor-not-allowed'
                   )}
                 >
-                  {'ï¿½'}
+                  {'\u00AB'}
                 </button>
                 <button
                   aria-label="Pagina anterior"
@@ -247,7 +247,7 @@ export default function HistoryPage() {
                     currentPage <= 1 && 'opacity-40 cursor-not-allowed'
                   )}
                 >
-                  {'ï¿½'}
+                  {'\u2039'}
                 </button>
                 <span
                   className={cn(
@@ -269,7 +269,7 @@ export default function HistoryPage() {
                     currentPage >= totalPages && 'opacity-40 cursor-not-allowed'
                   )}
                 >
-                  {'ï¿½'}
+                  {'\u203A'}
                 </button>
                 <button
                   aria-label="Ultima pagina"
@@ -283,7 +283,7 @@ export default function HistoryPage() {
                     currentPage >= totalPages && 'opacity-40 cursor-not-allowed'
                   )}
                 >
-                  {'ï¿½'}
+                  {'\u00BB'}
                 </button>
               </nav>
             </div>
