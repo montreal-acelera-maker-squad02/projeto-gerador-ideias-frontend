@@ -21,6 +21,8 @@ export default defineConfig({
         'src/pages/**/*.{ts,tsx}',
         'src/services/**/*.{ts,tsx}',
         'src/lib/**/*.{ts,tsx}',
+        'src/constants/__tests__/*.{ts,tsx}',
+        'src/events/__tests__/*.{ts,tsx}',
       ],
       exclude: [
         'src/main.tsx',
