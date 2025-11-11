@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
 import StatsCardWithIcon from "@/components/StatsCard/StatsCardWithIcon";
 import { Lightbulb, Clock, Star, ChevronDown, Shuffle } from "lucide-react";
@@ -9,6 +9,8 @@ import { ChatWidget } from "@/components/ChatWidget/ChatWidget";
 import AutoResizeTextarea from "@/components/AutoResizeTextarea/AutoResizeTextarea";
 import { useTheme } from "@/hooks/useTheme";
 import { emitHistoryRefreshRequest } from "@/events/historyEvents";
+import { themeService, type Theme } from "@/services/themeService";
+import { AppFooter } from "@/components/Footer/AppFooter";
 
 const themeOptions = [
   "Tecnologia",
