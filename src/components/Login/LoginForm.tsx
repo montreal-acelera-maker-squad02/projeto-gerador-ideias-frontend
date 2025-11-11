@@ -4,6 +4,7 @@ import { authService } from "@/services/authService";
 import { setAuthTokens } from "@/lib/api";
 import { TextField } from "@/components/common/TextField";
 import { PasswordToggle } from "@/components/common/PasswordToggle";
+import { prefetchIdeas } from "@/hooks/useIdeas";
 
 export const LoginForm: React.FC = () => {
   const [email, setEmail] = useState("");
@@ -33,6 +34,10 @@ export const LoginForm: React.FC = () => {
         };
         localStorage.setItem("user", JSON.stringify(userData));
       }
+
+      void prefetchIdeas().catch((err) =>
+        console.warn("Não foi possível pré-carregar o histórico", err)
+      );
 
       navigate("/generator");
     } catch (error: any) {

@@ -5,6 +5,7 @@ import { LoginForm } from '../LoginForm'
 import { renderWithProviders } from '@/test/test-utils'
 import { authService } from '@/services/authService'
 import { setAuthTokens } from '@/lib/api'
+import { prefetchIdeas } from '@/hooks/useIdeas'
 
 const mockNavigate = vi.fn()
 
@@ -26,14 +27,20 @@ vi.mock('@/lib/api', () => ({
   setAuthTokens: vi.fn(),
 }))
 
+vi.mock('@/hooks/useIdeas', () => ({
+  prefetchIdeas: vi.fn().mockResolvedValue(undefined),
+}))
+
 const loginMock = vi.mocked(authService.login)
 
 describe('LoginForm', () => {
   let storageSpy: ReturnType<typeof vi.spyOn>
+  const prefetchIdeasMock = vi.mocked(prefetchIdeas)
 
   beforeEach(() => {
     mockNavigate.mockReset()
     loginMock.mockReset()
+    prefetchIdeasMock.mockClear()
     storageSpy = vi.spyOn(Storage.prototype, 'setItem')
   })
 
@@ -63,6 +70,7 @@ describe('LoginForm', () => {
       'user',
       JSON.stringify({ uuid: 'user-uuid', name: 'Tester', email: 'user@example.com' })
     )
+    expect(prefetchIdeasMock).toHaveBeenCalled()
     expect(mockNavigate).toHaveBeenCalledWith('/generator')
   })
 

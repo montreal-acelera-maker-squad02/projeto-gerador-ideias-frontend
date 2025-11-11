@@ -1,4 +1,4 @@
-﻿import { useCallback, useEffect, useState } from 'react'
+﻿import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import IdeaHistoryCard from '@/components/IdeiaCard/IdeaHistoryCard'
 import FilterHistory from '@/components/FilterHistory'
 import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
@@ -7,6 +7,28 @@ import { THEMES } from '@/constants/themes'
 import { ideaService } from '@/services/ideaService'
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
+
+const FAVORITES_CACHE_TTL = Number(import.meta.env.VITE_FAVORITES_CACHE_TTL ?? 60_000)
+
+let favoriteIdsCache: { ids: Set<string>; fetchedAt: number } | null = null
+
+export function __resetHistoryFavoritesCache() {
+  favoriteIdsCache = null
+}
+
+
+async function getFavoriteIdsFromCache() {
+  const now = Date.now()
+  if (favoriteIdsCache && now - favoriteIdsCache.fetchedAt < FAVORITES_CACHE_TTL) {
+    return favoriteIdsCache.ids
+  }
+  const favorites = await ideaService.getFavorites()
+  favoriteIdsCache = {
+    ids: new Set(favorites.map((f) => f.id)),
+    fetchedAt: now,
+  }
+  return favoriteIdsCache.ids
+}
 
 export default function HistoryPage() {
   const [filters, setFilters] = useState<{ category: string; startDate: string; endDate: string }>({
@@ -22,53 +44,77 @@ export default function HistoryPage() {
 
   const { darkMode } = useTheme();
 
-  // 🔹 Quando as ideias são carregadas, sincroniza com backend de favoritos
+  // Prefetch ideas e sincroniza favoritos sem bloquear o render
   useEffect(() => {
+    if (!Array.isArray(ideasData)) return
+    setIdeas(ideasData)
+
+    let cancelled = false
+
     async function syncFavorites() {
       try {
-        const favorites = await ideaService.getFavorites()
-        const favoriteIds = new Set(favorites.map((f) => f.id))
-        setIdeas(
-          (ideasData || []).map((idea) => ({
+        const favoriteIds = await getFavoriteIdsFromCache()
+        if (cancelled) return
+        setIdeas((current) =>
+          current.map((idea) => ({
             ...idea,
-            isFavorite: favoriteIds.has(idea.id)
+            isFavorite: favoriteIds.has(idea.id),
           }))
         )
       } catch (err) {
-        console.error('Erro ao sincronizar favoritos:', err)
-        setIdeas(ideasData || [])
+        if (!cancelled) {
+          console.error('Erro ao sincronizar favoritos:', err)
+        }
       }
     }
 
-    if (Array.isArray(ideasData)) {
-      syncFavorites()
+    void syncFavorites()
+
+    return () => {
+      cancelled = true
     }
   }, [ideasData])
 
-  // resetar página ao alterar filtros
+  // resetar pï¿½gina ao alterar filtros
   useEffect(() => {
     setPage(1)
   }, [filters.category, filters.startDate, filters.endDate])
 
-  const handleToggleFavorite = useCallback(
-    async (id: string) => {
-      setIdeas((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, isFavorite: !i.isFavorite } : i))
-      )
-      try {
-        const idea = ideas.find((i) => i.id === id)
-        if (!idea) return
-        await ideaService.toggleFavorite(id, !idea.isFavorite)
-      } catch (err) {
-        console.error('Erro ao atualizar favorito:', err)
-        // rollback visual se falhar
-        setIdeas((prev) =>
-          prev.map((i) => (i.id === id ? { ...i, isFavorite: !i.isFavorite } : i))
-        )
+  const handleToggleFavorite = useCallback(async (id: string) => {
+    let optimisticValue: boolean | null = null
+    setIdeas((prev) =>
+      prev.map((idea) => {
+        if (idea.id !== id) return idea
+        optimisticValue = !idea.isFavorite
+        return { ...idea, isFavorite: optimisticValue }
+      })
+    )
+    if (optimisticValue === null) return
+
+    try {
+      await ideaService.toggleFavorite(id, optimisticValue)
+      if (favoriteIdsCache) {
+        const updated = new Set(favoriteIdsCache.ids)
+        if (optimisticValue) {
+          updated.add(id)
+        } else {
+          updated.delete(id)
+        }
+        favoriteIdsCache = { ids: updated, fetchedAt: Date.now() }
+      } else {
+        favoriteIdsCache = {
+          ids: optimisticValue ? new Set([id]) : new Set(),
+          fetchedAt: Date.now(),
+        }
       }
-    },
-    [ideas]
-  )
+    } catch (err) {
+      console.error('Erro ao atualizar favorito:', err)
+      const revertValue = !(optimisticValue ?? false)
+      setIdeas((prev) =>
+        prev.map((idea) => (idea.id === id ? { ...idea, isFavorite: revertValue } : idea))
+      )
+    }
+  }, [])
 
   const handleDelete = useCallback((id: string) => {
     setIdeas((prev) => prev.filter((i) => i.id !== id))
@@ -95,6 +141,30 @@ export default function HistoryPage() {
   const start = (currentPage - 1) * pageSize
   const paginated = filtered.slice(start, start + pageSize)
 
+  const contentClass = cn(
+    "rounded-lg border p-6 text-sm h-32 flex items-center justify-center",
+    darkMode
+      ? "bg-slate-900 border-slate-800 text-slate-200"
+      : "bg-white border-gray-200 text-gray-600"
+  )
+
+  let listContent: ReactNode = paginated.map((idea) => (
+    <IdeaHistoryCard
+      key={idea.id}
+      idea={idea}
+      onToggleFavorite={handleToggleFavorite}
+      onDelete={handleDelete}
+    />
+  ))
+
+  if (ideasLoading) {
+    listContent = <div className={contentClass}>Carregando ideias...</div>
+  } else if (filtered.length === 0) {
+    listContent = <div className={contentClass}>Nenhuma ideia encontrada.</div>
+  }
+
+  const hasIdeas = filtered.length > 0
+
   return (
     <div
       className={cn(
@@ -119,43 +189,12 @@ export default function HistoryPage() {
         </div>
 
         <div className="flex flex-col gap-6">
-          {ideasLoading ? (
-            <div
-              className={cn(
-                "rounded-lg border p-6 text-sm h-32 flex items-center justify-center",
-                darkMode
-                  ? "bg-slate-900 border-slate-800 text-slate-200"
-                  : "bg-white border-gray-200 text-gray-600"
-              )}
-            >
-              Carregando ideias...
-            </div>
-          ) : filtered.length === 0 ? (
-            <div
-              className={cn(
-                "rounded-lg border p-6 text-sm h-32 flex items-center justify-center",
-                darkMode
-                  ? "bg-slate-900 border-slate-800 text-slate-200"
-                  : "bg-white border-gray-200 text-gray-600"
-              )}
-            >
-              Nenhuma ideia encontrada.
-            </div>
-          ) : (
-            paginated.map((idea) => (
-              <IdeaHistoryCard
-                key={idea.id}
-                idea={idea}
-                onToggleFavorite={handleToggleFavorite}
-                onDelete={handleDelete}
-              />
-            ))
-          )}
+          {listContent}
 
-          {filtered.length > 0 && (
+          {hasIdeas && (
             <div className="flex items-center justify-center pt-2">
               <nav
-                aria-label="Paginação"
+                aria-label="Paginacao"
                 className={cn(
                   "inline-flex items-stretch rounded-lg overflow-hidden",
                   darkMode
@@ -164,6 +203,7 @@ export default function HistoryPage() {
                 )}
               >
                 <button
+                  aria-label="Primeira pagina"
                   onClick={() => setPage(1)}
                   disabled={currentPage <= 1}
                   className={cn(
@@ -174,9 +214,10 @@ export default function HistoryPage() {
                     currentPage <= 1 && "opacity-40 cursor-not-allowed"
                   )}
                 >
-                  «
+                  {'\u00AB'}
                 </button>
                 <button
+                  aria-label="Pagina anterior"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage <= 1}
                   className={cn(
@@ -187,7 +228,7 @@ export default function HistoryPage() {
                     currentPage <= 1 && "opacity-40 cursor-not-allowed"
                   )}
                 >
-                  ‹
+                  {'\u2039'}
                 </button>
                 <span
                   className={cn(
@@ -200,6 +241,7 @@ export default function HistoryPage() {
                   {currentPage}
                 </span>
                 <button
+                  aria-label="Proxima pagina"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                   disabled={currentPage >= totalPages}
                   className={cn(
@@ -210,9 +252,10 @@ export default function HistoryPage() {
                     currentPage >= totalPages && "opacity-40 cursor-not-allowed"
                   )}
                 >
-                  ›
+                  {'\u203A'}
                 </button>
                 <button
+                  aria-label="Ultima pagina"
                   onClick={() => setPage(totalPages)}
                   disabled={currentPage >= totalPages}
                   className={cn(
@@ -223,7 +266,7 @@ export default function HistoryPage() {
                     currentPage >= totalPages && "opacity-40 cursor-not-allowed"
                   )}
                 >
-                  »
+                  {'\u00BB'}
                 </button>
               </nav>
             </div>
@@ -233,3 +276,8 @@ export default function HistoryPage() {
     </div>
   )
 }
+
+
+
+
+
