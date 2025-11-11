@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import './style.css';
+import { useTheme } from "@/hooks/useTheme";
 
 export type Idea = {
   id: string;
@@ -55,14 +56,27 @@ function formatDateOnlyBR(d: Date) {
 }
 
 type PillKind = "theme" | "context";
-type PillProps = { children: ReactNode; kind?: PillKind };
+type PillProps = { children: ReactNode; kind?: PillKind; isDark: boolean };
 
-function Pill({ children, kind = "theme"}: Readonly<PillProps>) {
+function Pill({ children, kind = "theme", isDark }: Readonly<PillProps>) {
+  const base = "inline-block transition-all-smooth px-4 py-2 rounded-full text-sm animate-fadeInUp";
   const cls =
     kind === "theme"
-      ? "inline-block px-4 py-2 rounded-full text-sm font-light animate-fadeInUp bg-blue-100 text-blue-700"
-      : "inline-block px-3 py-1 rounded-full text-xs bg-gray-100 text-gray-700";
-  return <span className={cn(cls)} title={(children as string) || ""}>{children}</span>;
+      ? isDark
+        ? "font-light bg-blue-500/10 text-blue-100"
+        : "font-light bg-blue-100 text-blue-700"
+      : isDark
+        ? "bg-slate-800 text-slate-100"
+        : "bg-gray-100 text-gray-700";
+
+  return (
+    <span 
+      className={cn(base, cls)} 
+      title={(children as string) || ""}
+    >
+      {children}
+    </span>
+  );
 }
 
 function FullActions({
@@ -70,25 +84,52 @@ function FullActions({
   onFav,
   onCopy,
   onShare,
+  isDark,
 }: Readonly<{
   isFavorite?: boolean;
   onFav?: () => void;
   onCopy?: () => void | Promise<void>;
   onShare?: () => void | Promise<void>;
+  isDark: boolean;
 }>) {
-  const btn = "p-2 rounded-lg transition-all-smooth hover:scale-110 hover:bg-gray-100 cursor-pointer";
+  const hoverBg = isDark ? "hover:bg-slate-800" : "hover:bg-gray-100";
+  const textMuted = isDark ? "text-slate-300" : "text-gray-500";
+  const textHover = isDark ? "hover:text-slate-50" : "hover:text-gray-700";
+  
   return (
     <div className="flex items-center gap-2">
-      <button aria-label="Copiar" title="Copiar" className={cn("p-2 rounded-lg transition-all hover:scale-110 hover:bg-gray-100 text-gray-500 hover:text-gray-700 cursor-pointer")} onClick={onCopy}>
+      <button 
+        aria-label="Copiar" 
+        title="Copiar" 
+        className={cn(
+          "p-2 rounded-lg transition-all hover:scale-110 cursor-pointer",
+          hoverBg,
+          textMuted,
+          textHover
+        )}
+        onClick={onCopy}>
         <Copy className="w-5 h-5" />
       </button>
-      <button aria-label="Compartilhar" title="Compartilhar" className={cn("p-2 rounded-lg transition-all hover:scale-110 hover:bg-gray-100 text-gray-500 hover:text-gray-700 cursor-pointer")} onClick={onShare}>
+      <button
+        aria-label="Compartilhar"
+        title="Compartilhar"
+        className={cn(
+          "p-2 rounded-lg transition-all hover:scale-110 cursor-pointer",
+          hoverBg,
+          textMuted,
+          textHover
+        )}
+        onClick={onShare}
+      >
         <Share2 className="w-5 h-5" />
       </button>
       <button
         aria-label="Favoritar"
         aria-pressed={!!isFavorite}
-        className={btn}
+        className={cn(
+          "p-2 rounded-lg transition-all hover:scale-110 cursor-pointer",
+          hoverBg
+        )}
         onClick={onFav}
         title={isFavorite ? "Desfavoritar" : "Favoritar"}
       >
@@ -97,7 +138,9 @@ function FullActions({
             "w-5 h-5 transition-all",
             isFavorite
               ? "fill-red-500 text-red-500"
-              : "text-gray-500 hover:text-red-500"
+              : isDark
+                ? "text-slate-300 hover:text-red-400"
+                : "text-gray-500 hover:text-red-500"
           )}
         />
       </button>
@@ -124,11 +167,15 @@ export default memo(function BaseIdeaCard({
   onClick,
   className = "",
 }: BaseIdeaCardProps) {
+  const { darkMode } = useTheme();
+
   // helpers de estilo e flags
   const pad = density === "compact" ? "p-4" : "p-8";
   const textSize = density === "compact" ? "text-base" : "text-2xl";
   const clamp = clampLines ? ` line-clamp-${clampLines}` : "";
-  const surface = "rounded-2xl border-2 bg-white border-gray-300 shadow-md ";
+  const surface = darkMode
+    ? "rounded-2xl border-2 bg-slate-900/70 border-slate-800 shadow-md"
+    : "rounded-2xl border-2 bg-white border-gray-300 shadow-md";
   const showMeta = metaMode === "full" || metaMode === "minimal";
 
   // meta node
@@ -136,67 +183,119 @@ export default memo(function BaseIdeaCard({
     <div className="flex flex-col gap-1">
       {metaMode === "full" ? (
         <>
-          <div className="text-sm font-light text-gray-600">Gerado em {formatDateBR(idea.timestamp)}</div>
+          <div
+            className={cn(
+              "text-sm font-light",
+              darkMode ? "text-slate-300" : "text-gray-600"
+            )}
+          >
+            Gerado em {formatDateBR(idea.timestamp)}
+          </div>
           {typeof idea.responseTime === "number" && (
-            <div className="text-xs font-light text-gray-500">Tempo de resposta: {idea.responseTime}ms</div>
+            <div
+              className={cn(
+                "text-xs font-light",
+                darkMode ? "text-slate-500" : "text-gray-500"
+              )}
+            >
+              Tempo de resposta: {idea.responseTime}ms
+            </div>
           )}
         </>
       ) : (
-        <div className="text-xs font-light text-gray-500">{formatDateOnlyBR(idea.timestamp)}</div>
+        <div
+          className={cn(
+            "text-xs font-light",
+            darkMode ? "text-slate-400" : "text-gray-500"
+          )}
+        >
+          {formatDateOnlyBR(idea.timestamp)}
+        </div>
       )}
     </div>
   ) : (
     <div />
   );
 
-  // actions node (direita do footer) — preserva lógica atual
-  const actionsNode = footerRight
-    ? <div className="shrink-0">{footerRight}</div>
-    : actions !== "none" && actions === "full"
-    ? (
-        <FullActions
-          isFavorite={idea.isFavorite}
-          onFav={() => onToggleFavorite?.(idea.id)}
-          onCopy={async () => {
+  // actions node
+  const actionsNode =
+    footerRight !== undefined ? (
+      <div className="shrink-0">{footerRight}</div>
+    ) : actions !== "none" && actions === "full" ? (
+      <FullActions
+        isFavorite={idea.isFavorite}
+        onFav={() => onToggleFavorite?.(idea.id)}
+        onCopy={async () => {
+          await navigator.clipboard.writeText(idea.content);
+          onCopy?.(idea.content);
+        }}
+        onShare={async () => {
+          if (navigator.share) {
+            await navigator.share({
+              title: "Ideia Gerada",
+              text: idea.content,
+            });
+          } else {
             await navigator.clipboard.writeText(idea.content);
-            onCopy?.(idea.content);
-          }}
-          onShare={async () => {
-            if (navigator.share) {
-              await navigator.share({ title: "Ideia Gerada", text: idea.content });
-            } else {
-              await navigator.clipboard.writeText(idea.content);
-            }
-            onShare?.(idea.content);
-          }}
-        />
-      )
-    : null;
+          }
+          onShare?.(idea.content);
+        }}
+        isDark={darkMode}
+      />
+    ) : null;
 
-  const shouldShowFooter = metaMode !== "none" || actions !== "none" || !!footerRight;
+  const shouldShowFooter =
+    metaMode !== "none" || actions !== "none" || !!footerRight;
 
   return (
     <SectionContainer
-      className={cn("idea-card-scope group cursor-pointer", surface, pad, "animate-scaleIn", className)}
+      className={cn(
+        "idea-card-scope group cursor-pointer animate-scaleIn",
+        surface,
+        pad,
+        className
+      )}
       onClick={onClick}
     >
       {/* Header: pills */}
-      <div className="flex items-start justify-between mb-6">
+      <div className="flex items-start justify-between mb-6 gap-4">
         <div className="flex items-center gap-3 flex-wrap">
-          {showThemePill && <Pill kind="theme">{idea.theme}</Pill>}
-          {showContextPill && idea.context ? <Pill kind="context">{idea.context}</Pill> : null}
+          {showThemePill && (
+            <Pill kind="theme" isDark={darkMode}>
+              {idea.theme}
+            </Pill>
+          )}
+          {showContextPill && idea.context ? (
+            <Pill kind="context" isDark={darkMode}>
+              {idea.context}
+            </Pill>
+          ) : null}
         </div>
         {headerRight ? <div className="shrink-0">{headerRight}</div> : null}
       </div>
 
       {/* Body */}
-      <p className={`${textSize} font-light leading-relaxed mb-6 ${clamp} text-gray-800`}>
+      <p
+        className={cn(
+          `${textSize} font-light leading-relaxed mb-6 ${clamp}`,
+          darkMode ? "text-slate-100" : "text-gray-800"
+        )}
+      >
         {idea.content}
       </p>
 
       {/* Footer */}
       {shouldShowFooter && (
-        <div className={ cn("flex items-center justify-between", showDivider ? "pt-6 border-t border-gray-200" : "pt-2") }>
+        <div
+          className={cn(
+            "flex items-center justify-between gap-4",
+            showDivider
+              ? darkMode
+                ? "pt-6 border-t border-slate-800"
+                : "pt-6 border-t border-gray-200"
+              : "pt-2"
+          )}
+        >
           {metaNode}
           {actionsNode}
         </div>

@@ -1,12 +1,34 @@
-﻿import { useCallback, useEffect, useState } from 'react'
+﻿import { useCallback, useEffect, useState, type ReactNode } from 'react'
 import IdeaHistoryCard from '@/components/IdeiaCard/IdeaHistoryCard'
 import FilterHistory from '@/components/FilterHistory'
 import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
 import { useIdeas } from '@/hooks/useIdeas'
 import { THEMES } from '@/constants/themes'
-import { AppHeader } from '@/components/Header/AppHeader'
-import { AppFooter } from '@/components/Footer/AppFooter'
 import { ideaService } from '@/services/ideaService'
+import { useTheme } from "@/hooks/useTheme";
+import { cn } from "@/lib/utils";
+
+const FAVORITES_CACHE_TTL = Number(import.meta.env.VITE_FAVORITES_CACHE_TTL ?? 60_000)
+
+let favoriteIdsCache: { ids: Set<string>; fetchedAt: number } | null = null
+
+export function __resetHistoryFavoritesCache() {
+  favoriteIdsCache = null
+}
+
+
+async function getFavoriteIdsFromCache() {
+  const now = Date.now()
+  if (favoriteIdsCache && now - favoriteIdsCache.fetchedAt < FAVORITES_CACHE_TTL) {
+    return favoriteIdsCache.ids
+  }
+  const favorites = await ideaService.getFavorites()
+  favoriteIdsCache = {
+    ids: new Set(favorites.map((f) => f.id)),
+    fetchedAt: now,
+  }
+  return favoriteIdsCache.ids
+}
 
 export default function HistoryPage() {
   const [filters, setFilters] = useState<{ category: string; startDate: string; endDate: string }>({
@@ -20,53 +42,79 @@ export default function HistoryPage() {
   const [ideas, setIdeas] = useState<Idea[]>([])
   const { data: ideasData, loading: ideasLoading } = useIdeas(filters)
 
-  // 🔹 Quando as ideias são carregadas, sincroniza com backend de favoritos
+  const { darkMode } = useTheme();
+
+  // Prefetch ideas e sincroniza favoritos sem bloquear o render
   useEffect(() => {
+    if (!Array.isArray(ideasData)) return
+    setIdeas(ideasData)
+
+    let cancelled = false
+
     async function syncFavorites() {
       try {
-        const favorites = await ideaService.getFavorites()
-        const favoriteIds = new Set(favorites.map((f) => f.id))
-        setIdeas(
-          (ideasData || []).map((idea) => ({
+        const favoriteIds = await getFavoriteIdsFromCache()
+        if (cancelled) return
+        setIdeas((current) =>
+          current.map((idea) => ({
             ...idea,
-            isFavorite: favoriteIds.has(idea.id)
+            isFavorite: favoriteIds.has(idea.id),
           }))
         )
       } catch (err) {
-        console.error('Erro ao sincronizar favoritos:', err)
-        setIdeas(ideasData || [])
+        if (!cancelled) {
+          console.error('Erro ao sincronizar favoritos:', err)
+        }
       }
     }
 
-    if (Array.isArray(ideasData)) {
-      syncFavorites()
+    void syncFavorites()
+
+    return () => {
+      cancelled = true
     }
   }, [ideasData])
 
-  // resetar página ao alterar filtros
+  // resetar pï¿½gina ao alterar filtros
   useEffect(() => {
     setPage(1)
   }, [filters.category, filters.startDate, filters.endDate])
 
-  const handleToggleFavorite = useCallback(
-    async (id: string) => {
-      setIdeas((prev) =>
-        prev.map((i) => (i.id === id ? { ...i, isFavorite: !i.isFavorite } : i))
-      )
-      try {
-        const idea = ideas.find((i) => i.id === id)
-        if (!idea) return
-        await ideaService.toggleFavorite(id, !idea.isFavorite)
-      } catch (err) {
-        console.error('Erro ao atualizar favorito:', err)
-        // rollback visual se falhar
-        setIdeas((prev) =>
-          prev.map((i) => (i.id === id ? { ...i, isFavorite: !i.isFavorite } : i))
-        )
+  const handleToggleFavorite = useCallback(async (id: string) => {
+    let optimisticValue: boolean | null = null
+    setIdeas((prev) =>
+      prev.map((idea) => {
+        if (idea.id !== id) return idea
+        optimisticValue = !idea.isFavorite
+        return { ...idea, isFavorite: optimisticValue }
+      })
+    )
+    if (optimisticValue === null) return
+
+    try {
+      await ideaService.toggleFavorite(id, optimisticValue)
+      if (favoriteIdsCache) {
+        const updated = new Set(favoriteIdsCache.ids)
+        if (optimisticValue) {
+          updated.add(id)
+        } else {
+          updated.delete(id)
+        }
+        favoriteIdsCache = { ids: updated, fetchedAt: Date.now() }
+      } else {
+        favoriteIdsCache = {
+          ids: optimisticValue ? new Set([id]) : new Set(),
+          fetchedAt: Date.now(),
+        }
       }
-    },
-    [ideas]
-  )
+    } catch (err) {
+      console.error('Erro ao atualizar favorito:', err)
+      const revertValue = !(optimisticValue ?? false)
+      setIdeas((prev) =>
+        prev.map((idea) => (idea.id === id ? { ...idea, isFavorite: revertValue } : idea))
+      )
+    }
+  }, [])
 
   const handleDelete = useCallback((id: string) => {
     setIdeas((prev) => prev.filter((i) => i.id !== id))
@@ -93,90 +141,143 @@ export default function HistoryPage() {
   const start = (currentPage - 1) * pageSize
   const paginated = filtered.slice(start, start + pageSize)
 
+  const contentClass = cn(
+    "rounded-lg border p-6 text-sm h-32 flex items-center justify-center",
+    darkMode
+      ? "bg-slate-900 border-slate-800 text-slate-200"
+      : "bg-white border-gray-200 text-gray-600"
+  )
+
+  let listContent: ReactNode = paginated.map((idea) => (
+    <IdeaHistoryCard
+      key={idea.id}
+      idea={idea}
+      onToggleFavorite={handleToggleFavorite}
+      onDelete={handleDelete}
+    />
+  ))
+
+  if (ideasLoading) {
+    listContent = <div className={contentClass}>Carregando ideias...</div>
+  } else if (filtered.length === 0) {
+    listContent = <div className={contentClass}>Nenhuma ideia encontrada.</div>
+  }
+
+  const hasIdeas = filtered.length > 0
+
   return (
-    <>
-      <AppHeader />
-      <main className="min-h-screen p-6">
-        <div className="grid gap-6 md:grid-cols-[300px_1fr]">
-          <div>
-            <FilterHistory
-              fixed={false}
-              categories={[{ label: 'Todas', value: '' }, ...THEMES]}
-              value={filters}
-              onChange={(v) =>
-                setFilters({
-                  category: v.category ?? '',
-                  startDate: v.startDate ?? '',
-                  endDate: v.endDate ?? ''
-                })
-              }
-            />
-          </div>
-
-          <div className="flex flex-col gap-6">
-            {ideasLoading ? (
-              <div className="rounded-lg border border-gray-200 p-6 text-sm text-gray-600 h-32 flex items-center justify-center">
-                Carregando ideias...
-              </div>
-            ) : filtered.length === 0 ? (
-              <div className="rounded-lg border border-gray-200 p-6 text-sm text-gray-600 h-32 flex items-center justify-center">
-                Nenhuma ideia encontrada.
-              </div>
-            ) : (
-              paginated.map((idea) => (
-                <IdeaHistoryCard
-                  key={idea.id}
-                  idea={idea}
-                  onToggleFavorite={handleToggleFavorite}
-                  onDelete={handleDelete}
-                />
-              ))
-            )}
-
-            {filtered.length > 0 && (
-              <div className="flex items-center justify-center pt-2">
-                <nav
-                  aria-label="Paginação"
-                  className="inline-flex items-stretch rounded-lg border border-gray-300 bg-white overflow-hidden shadow-sm"
-                >
-                  <button
-                    onClick={() => setPage(1)}
-                    disabled={currentPage <= 1}
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 disabled:opacity-40"
-                  >
-                    «
-                  </button>
-                  <button
-                    onClick={() => setPage((p) => Math.max(1, p - 1))}
-                    disabled={currentPage <= 1}
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
-                  >
-                    ‹
-                  </button>
-                  <span className="px-4 py-1.5 text-sm font-semibold bg-slate-700 text-white border-l border-gray-300">
-                    {currentPage}
-                  </span>
-                  <button
-                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                    disabled={currentPage >= totalPages}
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
-                  >
-                    ›
-                  </button>
-                  <button
-                    onClick={() => setPage(totalPages)}
-                    disabled={currentPage >= totalPages}
-                    className="px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100 border-l border-gray-300 disabled:opacity-40"
-                  >
-                    »
-                  </button>
-                </nav>
-              </div>
-            )}
-          </div>
+    <div
+      className={cn(
+        "max-w-7xl mx-auto px-8 py-12 relative z-10",
+        darkMode ? "text-slate-100" : "text-gray-900"
+      )}
+    >
+      <div className="grid gap-6 md:grid-cols-[300px_1fr]">
+        <div>
+          <FilterHistory
+            fixed={false}
+            categories={[{ label: 'Todas', value: '' }, ...THEMES]}
+            value={filters}
+            onChange={(v) =>
+              setFilters({
+                category: v.category ?? '',
+                startDate: v.startDate ?? '',
+                endDate: v.endDate ?? ''
+              })
+            }
+          />
         </div>
-      </main>
-      <AppFooter />
-    </>
+
+        <div className="flex flex-col gap-6">
+          {listContent}
+
+          {hasIdeas && (
+            <div className="flex items-center justify-center pt-2">
+              <nav
+                aria-label="Paginacao"
+                className={cn(
+                  "inline-flex items-stretch rounded-lg overflow-hidden",
+                  darkMode
+                    ? "border border-slate-700 bg-slate-900"
+                    : "border border-gray-300 bg-white shadow-sm"
+                )}
+              >
+                <button
+                  aria-label="Primeira pagina"
+                  onClick={() => setPage(1)}
+                  disabled={currentPage <= 1}
+                  className={cn(
+                    "px-3 py-1.5 text-sm transition-colors",
+                    darkMode
+                      ? "text-slate-200 hover:bg-slate-800"
+                      : "text-gray-700 hover:bg-gray-100",
+                    currentPage <= 1 && "opacity-40 cursor-not-allowed"
+                  )}
+                >
+                  {'\u00AB'}
+                </button>
+                <button
+                  aria-label="Pagina anterior"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={currentPage <= 1}
+                  className={cn(
+                    "px-3 py-1.5 text-sm border-l",
+                    darkMode
+                      ? "border-slate-700 text-slate-200 hover:bg-slate-800"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-100",
+                    currentPage <= 1 && "opacity-40 cursor-not-allowed"
+                  )}
+                >
+                  {'\u2039'}
+                </button>
+                <span
+                  className={cn(
+                    "px-4 py-1.5 text-sm font-semibold border-l",
+                    darkMode
+                      ? "bg-slate-700 text-white border-slate-700"
+                      : "bg-blue-50 text-blue-700 border-gray-300"
+                  )}
+                >
+                  {currentPage}
+                </span>
+                <button
+                  aria-label="Proxima pagina"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={currentPage >= totalPages}
+                  className={cn(
+                    "px-3 py-1.5 text-sm border-l",
+                    darkMode
+                      ? "border-slate-700 text-slate-200 hover:bg-slate-800"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-100",
+                    currentPage >= totalPages && "opacity-40 cursor-not-allowed"
+                  )}
+                >
+                  {'\u203A'}
+                </button>
+                <button
+                  aria-label="Ultima pagina"
+                  onClick={() => setPage(totalPages)}
+                  disabled={currentPage >= totalPages}
+                  className={cn(
+                    "px-3 py-1.5 text-sm border-l",
+                    darkMode
+                      ? "border-slate-700 text-slate-200 hover:bg-slate-800"
+                      : "border-gray-300 text-gray-700 hover:bg-gray-100",
+                    currentPage >= totalPages && "opacity-40 cursor-not-allowed"
+                  )}
+                >
+                  {'\u00BB'}
+                </button>
+              </nav>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
   )
 }
+
+
+
+
+

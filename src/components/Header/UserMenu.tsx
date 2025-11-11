@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import { Sun, Moon, ChevronDown, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useTheme } from '@/hooks/useTheme';
 
 export type NavItem = Readonly<{ to: string; label: string; exact?: boolean }>;
 
@@ -9,7 +10,7 @@ export type UserMenuProps = Readonly<{
   userName?: string;
   onLogout?: () => void;
   nav?: NavItem[];
-  includeMobileNav?: boolean; // show nav list inside dropdown on small screens
+  includeMobileNav?: boolean;
   className?: string;
 }>;
 
@@ -21,17 +22,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
   className,
 }) => {
   const [open, setOpen] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
   const btnRef = useRef<HTMLButtonElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const navigate = useNavigate();
 
-  // initial theme from localStorage
-  useEffect(() => {
-    const saved = localStorage.getItem("darkMode") === "true";
-    setDarkMode(saved);
-    document.documentElement.classList.toggle("dark", saved);
-  }, []);
+  const { darkMode, toggleDarkMode } = useTheme();
 
   // close on outside click / escape
   useEffect(() => {
@@ -52,11 +47,8 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     };
   }, [open]);
 
-  const toggleTheme = () => {
-    const next = !darkMode;
-    setDarkMode(next);
-    localStorage.setItem("darkMode", String(next));
-    document.documentElement.classList.toggle("dark", next);
+  const handleToggleTheme = () => {
+    toggleDarkMode();
     setOpen(false);
   };
 
@@ -76,7 +68,9 @@ export const UserMenu: React.FC<UserMenuProps> = ({
         aria-expanded={open}
         className={cn(
           "flex items-center gap-2 px-4 py-2 rounded-full transition-all-smooth hover:scale-105",
-          "bg-blue-50 hover:bg-blue-100 border border-blue-200/50"
+          darkMode 
+            ? "bg-slate-800/50 hover:bg-slate-700 border border-slate-700/50"
+            : "bg-blue-50 hover:bg-blue-100 border border-blue-200/50"
         )}
       >
         <span className="text-sm font-light">{userName}</span>
@@ -93,17 +87,19 @@ export const UserMenu: React.FC<UserMenuProps> = ({
           ref={menuRef}
           role="menu"
           className={cn(
-            "absolute right-0 mt-2 w-64 rounded-xl border bg-white shadow-lg z-[9999]",
-            "border-gray-200 animate-slideDown"
+            "absolute right-0 mt-2 w-64 rounded-xl border shadow-lg z-[9999] animate-slideDown overflow-hidden",
+            darkMode
+              ? "bg-slate-900 border-slate-700"
+              : "bg-white border-gray-200"
           )}
         >
           {/* Theme toggle */}
           <button
             type="button"
-            onClick={toggleTheme}
+            onClick={handleToggleTheme}
             className={cn(
-              "w-full text-left px-4 py-3 text-sm flex items-center gap-3",
-              "hover:bg-gray-100 transition-all-smooth"
+              "w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-all-smooth",
+              darkMode ? "hover:bg-slate-800 text-slate-50" : "hover:bg-gray-100"
             )}
             role="menuitem"
           >
@@ -120,12 +116,16 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             )}
           </button>
 
-          <div className="my-1 h-px bg-gray-200" />
+          <div className={cn("my-1 h-px", darkMode ? "bg-slate-700" : "bg-gray-200")} />
 
           {/* Mobile nav inside dropdown */}
           {includeMobileNav && nav.length > 0 && (
             <div className="block md:hidden">
-              <div className="px-4 py-2 text-xs uppercase tracking-wide text-gray-500">
+              <div className={cn(
+                  "px-4 py-2 text-xs uppercase tracking-wide",
+                  darkMode ? "text-slate-400" : "text-gray-500"
+                )}
+              >
                 Navegação
               </div>
               <ul className="py-1">
@@ -135,20 +135,29 @@ export const UserMenu: React.FC<UserMenuProps> = ({
                       to={item.to}
                       end={item.exact}
                       onClick={() => setOpen(false)}
-                      className={({ isActive }) =>
-                        cn(
-                          "block px-4 py-2 text-sm transition-all-smooth",
-                          "hover:bg-gray-100",
-                          isActive ? "text-blue-600" : "text-gray-700"
-                        )
-                      }
+                      className={({ isActive }) => {
+                        const base =
+                          "block px-4 py-2 text-sm transition-all-smooth";
+                        let stateClass = "";
+
+                        if (isActive && darkMode)
+                          stateClass = "text-blue-300";
+                        else if (isActive && !darkMode)
+                          stateClass = "text-blue-600";
+                        else if (!isActive && darkMode)
+                          stateClass = "text-slate-100 hover:bg-slate-800";
+                        else 
+                          stateClass = "text-gray-700 hover:bg-gray-100";
+
+                        return cn(base, stateClass);
+                      }}
                     >
                       {item.label}
                     </NavLink>
                   </li>
                 ))}
               </ul>
-              <div className="my-1 h-px bg-gray-200" />
+              <div className={cn("my-1 h-px", darkMode ? "bg-slate-700" : "bg-gray-200")} />
             </div>
           )}
 
@@ -157,8 +166,10 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             type="button"
             onClick={handleLogout}
             className={cn(
-              "w-full text-left px-4 py-3 text-sm flex items-center gap-3 text-red-600",
-              "hover:bg-red-50 transition-all-smooth"
+              "w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-all-smooth",
+              darkMode
+                ? "text-red-400 hover:bg-slate-800"
+                : "text-red-600 hover:bg-red-50"
             )}
             role="menuitem"
           >

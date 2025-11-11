@@ -1,12 +1,13 @@
 import { describe, it, expect, vi } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { screen, fireEvent } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
-import FilterHistory from '@/components/FilterHistory'
 import { useState } from 'react'
+import FilterHistory from '@/components/FilterHistory'
+import { renderWithProviders } from '@/test/test-utils'
 
 describe('FilterHistory', () => {
   it('renderiza labels e título básicos', () => {
-    render(<FilterHistory />)
+    renderWithProviders(<FilterHistory />)
     expect(screen.getByText('Filtros')).toBeInTheDocument()
     expect(screen.getByLabelText('Categoria')).toBeInTheDocument()
     expect(screen.getByLabelText('Data Início')).toBeInTheDocument()
@@ -17,7 +18,7 @@ describe('FilterHistory', () => {
   it('chama onChange ao alterar categoria (controlado)', async () => {
     const user = userEvent.setup()
     const onChange = vi.fn()
-    render(<FilterHistory value={{ category: '', startDate: '', endDate: '' }} onChange={onChange} />)
+    renderWithProviders(<FilterHistory value={{ category: '', startDate: '', endDate: '' }} onChange={onChange} />)
     const select = screen.getByLabelText('Categoria') as HTMLSelectElement
     await user.selectOptions(select, 'tecnologia')
     expect(onChange).toHaveBeenCalled()
@@ -30,7 +31,7 @@ describe('FilterHistory', () => {
       const [value, setValue] = useState({ category: '', startDate: '', endDate: '' })
       return <FilterHistory value={value} onChange={(next) => setValue(prev => ({ ...prev, ...next }))} />
     }
-    render(<Harness />)
+    renderWithProviders(<Harness />)
     const start = screen.getByLabelText('Data Início') as HTMLInputElement
     const end = screen.getByLabelText('Data Fim') as HTMLInputElement
     fireEvent.change(start, { target: { value: '2025-03-20' } })
@@ -42,7 +43,7 @@ describe('FilterHistory', () => {
   it('limpa filtros ao clicar no botão', async () => {
     const onChange = vi.fn()
     const onClear = vi.fn()
-    render(
+    renderWithProviders(
       <FilterHistory
         value={{ category: 'tecnologia', startDate: '2025-03-20', endDate: '2025-03-21' }}
         onChange={onChange}
@@ -56,7 +57,7 @@ describe('FilterHistory', () => {
   })
 
   it('aplica classes do dark mode quando darkMode=true', () => {
-    const { container } = render(<FilterHistory darkMode />)
+    const { container } = renderWithProviders(<FilterHistory darkMode />)
     const panel = container.querySelector('.fh-container')
     expect(panel).toBeInTheDocument()
     // Em dark mode, um dos modifiers deve estar presente

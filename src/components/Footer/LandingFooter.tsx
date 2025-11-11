@@ -58,7 +58,7 @@ export function LandingFooter() {
         </div>
       </div>
 
-      <AppFooter />
+      <AppFooter forceLightMode />
     </footer>
   );
 }
