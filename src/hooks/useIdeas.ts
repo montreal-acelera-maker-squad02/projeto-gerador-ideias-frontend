@@ -1,13 +1,25 @@
-﻿import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
 import { apiFetch } from '@/lib/api'
 import { THEMES } from '@/constants/themes'
 
 export type IdeasFilters = {
-  category?: string // UI label; mapeado para 'theme' na API
-  startDate?: string // formato UI: YYYY-MM-DD
-  endDate?: string   // formato UI: YYYY-MM-DD
+  category?: string
+  startDate?: string
+  endDate?: string
 }
+
+const CACHE_KEY_EMPTY = '__all__'
+const CACHE_TTL_MS = Number(import.meta.env.VITE_IDEAS_CACHE_TTL ?? 2 * 60 * 1000)
+
+const ideasCache = new Map<
+  string,
+  {
+    data: Idea[]
+    fetchedAt: number
+  }
+>()
+const pendingFetches = new Map<string, Promise<Idea[]>>()
 
 export function useIdeas(filters: IdeasFilters) {
   const [data, setData] = useState<Idea[] | null>(null)
@@ -16,29 +28,118 @@ export function useIdeas(filters: IdeasFilters) {
   const abortRef = useRef<AbortController | null>(null)
   const enabled = import.meta.env.VITE_USE_IDEAS_API === 'true'
 
-  function toLocalDateTime(date?: string, end?: boolean) {
-    if (!date) return undefined
-    return end ? `${date}T23:59:59` : `${date}T00:00:00`
+  const query = useMemo(() => buildQuery(filters), [filters.category, filters.startDate, filters.endDate])
+  const cacheKey = query || CACHE_KEY_EMPTY
+
+  const fetchIdeas = useMemo(() => {
+    return async (
+      signal?: AbortSignal,
+      options: { silent?: boolean; force?: boolean } = {}
+    ) => {
+      if (!options.silent) {
+        setLoading(true)
+      }
+      setError(null)
+      try {
+        const result = await prefetchIdeasInternal({ query, signal, force: options.force })
+        setData(result)
+      } catch (e) {
+        // @ts-expect-error narrow
+        if (e?.name === 'AbortError') return
+        setError(e)
+      } finally {
+        if (!options.silent) {
+          setLoading(false)
+        }
+      }
+    }
+  }, [query])
+
+  function refetch(options?: { ignoreCache?: boolean }) {
+    abortRef.current?.abort()
+    abortRef.current = new AbortController()
+    void fetchIdeas(abortRef.current.signal, {
+      silent: false,
+      force: options?.ignoreCache,
+    })
   }
 
-  const query = useMemo(() => {
-    const params = new URLSearchParams()
-    if (filters.category) params.set('theme', filters.category)
-    const start = toLocalDateTime(filters.startDate)
-    const end = toLocalDateTime(filters.endDate, true)
-    if (start) params.set('startDate', start)
-    if (end) params.set('endDate', end)
-    return params.toString()
-  }, [filters.category, filters.startDate, filters.endDate])
+  useEffect(() => {
+    if (!enabled) {
+      setData(null)
+      setLoading(false)
+      return
+    }
 
-  async function fetchIdeas(signal?: AbortSignal) {
-    setLoading(true)
-    setError(null)
+    const cached = ideasCache.get(cacheKey)
+    if (cached) {
+      setData(cached.data)
+      setLoading(false)
+    }
+
+    const isFresh = cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS
+    if (isFresh) {
+      return
+    }
+
+    abortRef.current?.abort()
+    const controller = new AbortController()
+    abortRef.current = controller
+    void fetchIdeas(controller.signal, { silent: Boolean(cached) })
+    return () => controller.abort()
+  }, [cacheKey, enabled, fetchIdeas])
+
+  return { data, loading, error, refetch }
+}
+
+export async function prefetchIdeas(filters: IdeasFilters = {}) {
+  await prefetchIdeasInternal({ query: buildQuery(filters) }).catch((error) => {
+    if (error?.name === 'AbortError') return
+    console.warn('Não foi possível pré-carregar o histórico', error)
+  })
+}
+
+function buildQuery(filters: IdeasFilters): string {
+  const params = new URLSearchParams()
+  if (filters.category) params.set('theme', filters.category)
+  if (filters.startDate) params.set('startDate', `${filters.startDate}T00:00:00`)
+  if (filters.endDate) params.set('endDate', `${filters.endDate}T23:59:59`)
+  return params.toString()
+}
+
+async function prefetchIdeasInternal({
+  query,
+  signal,
+  force = false,
+}: {
+  query: string
+  signal?: AbortSignal
+  force?: boolean
+}): Promise<Idea[]> {
+  const key = query || CACHE_KEY_EMPTY
+
+  if (!force) {
+    const cached = ideasCache.get(key)
+    if (cached && Date.now() - cached.fetchedAt < CACHE_TTL_MS) {
+      return cached.data
+    }
+  } else {
+    ideasCache.delete(key)
+  }
+
+  if (pendingFetches.has(key)) {
+    return pendingFetches.get(key)!
+  }
+
+  const fetchPromise = (async () => {
     try {
-      // Endpoint real do histÃ³rico com filtros opcionais
       const url = '/api/ideas/history' + (query ? `?${query}` : '')
       const res = await apiFetch(url, { signal })
-      if (res.status === 404) { setData([]); return }
+      if (res.status === 404) {
+        const empty: Idea[] = []
+        ideasCache.set(key, { data: empty, fetchedAt: Date.now() })
+        return empty
+      }
       if (!res.ok) throw new Error(`Erro ${res.status}`)
       const json = (await res.json()) as Array<Record<string, any>>
       const parsed: Idea[] = json.map((it) => {
@@ -51,39 +152,20 @@ export function useIdeas(filters: IdeasFilters) {
           timestamp: parseTimestamp(sourceTs),
         } as Idea
       })
-      setData(parsed)
-    } catch (e) {
-      // Se for abort, ignore
-      // @ts-expect-error narrow
-      if (e?.name === 'AbortError') return
-      setError(e)
+      ideasCache.set(key, { data: parsed, fetchedAt: Date.now() })
+      return parsed
     } finally {
-      setLoading(false)
+      pendingFetches.delete(key)
     }
-  }
+  })()
 
-  function refetch() {
-    abortRef.current?.abort()
-    abortRef.current = new AbortController()
-    void fetchIdeas(abortRef.current.signal)
-  }
-
-  useEffect(() => {
-    if (!enabled) return
-    abortRef.current?.abort()
-    abortRef.current = new AbortController()
-    void fetchIdeas(abortRef.current.signal)
-    return () => abortRef.current?.abort()
-  }, [query, enabled])
-
-  return { data, loading, error, refetch }
+  pendingFetches.set(key, fetchPromise)
+  return fetchPromise
 }
 
 function parseTimestamp(input: unknown): Date {
-  // Already a Date
   if (input instanceof Date) return input
 
-  // Epoch seconds/ms
   if (typeof input === 'number') {
     const ms = input > 1e12 ? input : input * 1000
     return new Date(ms)
@@ -92,7 +174,6 @@ function parseTimestamp(input: unknown): Date {
   if (typeof input === 'string') {
     let s = input.trim().replace(',', '.')
 
-    // Regex: YYYY-MM-DD [T ] hh:mm:ss(.fraction)? (Z|Â±hh:mm)?
     const m = s.match(
       /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}:\d{2})?$/
     )
@@ -107,12 +188,9 @@ function parseTimestamp(input: unknown): Date {
       const frac = fracRaw ? Number(String(fracRaw).slice(0, 3).padEnd(3, '0')) : 0
 
       if (!tz || tz === '') {
-        // Sem timezone: interpretar como horÃ¡rio local
         return new Date(y, mo, d, H, Mi, S, frac)
       }
 
-      // Com timezone
-      // Base UTC
       let utcMs = Date.UTC(y, mo, d, H, Mi, S, frac)
       if (tz !== 'Z') {
         const sign = tz.startsWith('-') ? -1 : 1
@@ -123,22 +201,23 @@ function parseTimestamp(input: unknown): Date {
       return new Date(utcMs)
     }
 
-    // Date only
     if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s + 'T00:00:00')
 
-    // Ãšltima tentativa usando o parser nativo
     const dflt = new Date(s)
     if (!isNaN(dflt.getTime())) return dflt
   }
 
-  // Fallback seguro: retorna epoch 0 (evita Invalid Date no render)
   return new Date(0)
 }
 
 function sanitizeQuotedText(text: unknown): string {
   if (typeof text !== 'string') return String(text ?? '')
   const t = text.trim()
-  const pairs: Array<[string, string]> = [["\"","\""], ['â€œ','â€'], ["'","'"]]
+  const pairs: Array<[string, string]> = [
+    ['"', '"'],
+    ['�?o', '�??'],
+    ["'", "'"],
+  ]
   for (const [start, end] of pairs) {
     if (t.startsWith(start) && t.endsWith(end) && t.length >= 2) {
       return t.slice(1, -1)
@@ -158,4 +237,3 @@ function capitalizeFirst(s: string): string {
   if (!s) return s
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
-
