@@ -1,4 +1,6 @@
 ﻿import { useEffect, useId, useState } from 'react'
+import { themeService, type Theme } from '@/services/themeService' 
+import { cn } from '@/lib/utils'
 import { THEMES } from '@/constants/themes'
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
@@ -9,7 +11,6 @@ type Option = { label: string; value: string }
 export type FilterHistoryProps = {
   darkMode?: boolean
   fixed?: boolean
-  categories?: Option[]
   value?: { category?: string; startDate?: string; endDate?: string }
   onChange?: (next: { category?: string; startDate?: string; endDate?: string }) => void
   onClear?: () => void
@@ -19,7 +20,6 @@ export type FilterHistoryProps = {
 export default function FilterHistory({
   darkMode,
   fixed = false,
-  categories = [{ label: 'Todas', value: '' }, ...THEMES],
   value,
   onChange,
   onClear,
@@ -33,10 +33,24 @@ export default function FilterHistory({
   const startId = useId()
   const endId = useId()
 
-  // Estado interno para modo não-controlado (fallback)
+  const [categories, setCategories] = useState<Option[]>([{ label: 'Todas', value: '' }])
   const [internalCategory, setInternalCategory] = useState<string>('')
   const [internalStart, setInternalStart] = useState<string>('')
   const [internalEnd, setInternalEnd] = useState<string>('')
+
+  // 🔄 Carrega temas do backend
+  useEffect(() => {
+    async function loadThemes() {
+      try {
+        const data = await themeService.getAll()
+        const opts = [{ label: 'Todas', value: '' }, ...data.map((t: Theme) => ({ label: t.name, value: t.name }))]
+        setCategories(opts)
+      } catch (err) {
+        console.error('Erro ao carregar temas:', err)
+      }
+    }
+    loadThemes()
+  }, [])
 
   // Sincroniza quando componente é usado de forma controlada
   useEffect(() => {
@@ -162,9 +176,3 @@ function FilterIcon({ className = "" }: { className?: string }) {
     </svg>
   )
 }
-
-
-
-
-
-
