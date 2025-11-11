@@ -217,14 +217,14 @@ export default function HistoryPage() {
           {hasIdeas && (
             <div className="flex items-center justify-center pt-2">
               <nav
-                aria-label="Paginacao"
+                aria-label="Paginação"
                 className={cn(
                   'inline-flex items-stretch rounded-lg overflow-hidden',
                   darkMode ? 'border border-slate-700 bg-slate-900' : 'border border-gray-300 bg-white shadow-sm'
                 )}
               >
                 <button
-                  aria-label="Primeira pagina"
+                  aria-label="Primeira página"
                   onClick={() => setPage(1)}
                   disabled={currentPage <= 1}
                   className={cn(
@@ -236,7 +236,7 @@ export default function HistoryPage() {
                   {'\u00AB'}
                 </button>
                 <button
-                  aria-label="Pagina anterior"
+                  aria-label="Página anterior"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage <= 1}
                   className={cn(
