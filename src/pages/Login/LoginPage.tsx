@@ -20,7 +20,7 @@ export const LoginPage: React.FC = () => {
         </div>
       </div>
 
-      <AppFooter />
+      <AppFooter forceLightMode />
     </div>
   );
 };
