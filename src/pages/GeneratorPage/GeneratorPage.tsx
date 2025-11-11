@@ -79,6 +79,13 @@ const RANDOM_CONTEXTS = [
   "Monetização por assinatura",
 ] as const;
 
+const RESPONSE_WINDOW = 600;
+let responseSeed = 0;
+function nextResponseTime() {
+  responseSeed = (responseSeed + 137) % RESPONSE_WINDOW;
+  return 200 + responseSeed;
+}
+
 function buildLocalIdea(themeName: string, contextText: string): Idea {
   const pool = sampleIdeas[themeName as keyof typeof sampleIdeas] ?? sampleIdeas.Tecnologia;
   const content = pickRandom(pool);
@@ -89,7 +96,7 @@ function buildLocalIdea(themeName: string, contextText: string): Idea {
     content,
     timestamp: new Date(),
     isFavorite: false,
-    responseTime: Math.floor(Math.random() * 800) + 200,
+    responseTime: nextResponseTime(),
   };
 }
 
@@ -381,16 +388,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
                     className="flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all hover:opacity-80"
                   >
                     <span
-                      className={cn(
-                        "text-base font-light",
-                        theme
-                          ? darkMode
-                            ? "text-blue-400"
-                            : "text-blue-600"
-                          : darkMode
-                          ? "text-slate-400"
-                          : "text-gray-500"
-                      )}
+                      className={cn("text-base font-light", themeToneClass)}
                     >
                       {selectedThemeLabel}
                     </span>
@@ -398,13 +396,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
                       className={cn(
                         "w-5 h-5 transition-transform",
                         showThemeDropdown && "rotate-180",
-                        theme
-                          ? darkMode
-                            ? "text-blue-400"
-                            : "text-blue-600"
-                          : darkMode
-                          ? "text-slate-400"
-                          : "text-gray-500"
+                        themeToneClass
                       )}
                     />
                   </button>
