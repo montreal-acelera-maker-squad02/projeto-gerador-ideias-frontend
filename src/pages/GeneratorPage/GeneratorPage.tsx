@@ -423,8 +423,8 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
             idea={currentIdea}
             onToggleFavorite={(id) => toggleFavorite(id)}
             onCopy={() => {}}
-            onShare={() => {}}
-            />            
+            onShare={() => {}}           
+          />            
         ) : (
           <SectionContainer
             className={cn(
@@ -453,7 +453,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
           value={ideas.length}
           Icon={Lightbulb}
           className="animation-delay-0"
-          />
+        />
         <StatsCardWithIcon
           title="Tempo médio"
           value={
@@ -470,13 +470,13 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
           }
           Icon={Clock}
           delay={100}
-          />
+        />
         <StatsCardWithIcon
           title="Favoritas"
           value={favoriteIdeas.length}
           Icon={Star}
           delay={200}
-          />
+        />
       </div>
       {disableChatWidget ? null : <ChatWidget />}
     </div>
