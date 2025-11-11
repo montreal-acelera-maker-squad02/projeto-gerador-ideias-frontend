@@ -1,7 +1,5 @@
 ﻿import { useEffect, useId, useState } from 'react'
 import { themeService, type Theme } from '@/services/themeService' 
-import { cn } from '@/lib/utils'
-import { THEMES } from '@/constants/themes'
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
 
