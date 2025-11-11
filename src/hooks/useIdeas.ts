@@ -55,11 +55,11 @@ export function useIdeas(filters: IdeasFilters) {
     }
   }, [query])
 
-  function refetch(options?: { ignoreCache?: boolean }) {
+  function refetch(options?: { ignoreCache?: boolean; silent?: boolean }) {
     abortRef.current?.abort()
     abortRef.current = new AbortController()
     void fetchIdeas(abortRef.current.signal, {
-      silent: false,
+      silent: options?.silent ?? false,
       force: options?.ignoreCache,
     })
   }

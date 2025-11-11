@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
 import StatsCardWithIcon from "@/components/StatsCard/StatsCardWithIcon";
 import { Lightbulb, Clock, Star, ChevronDown, Shuffle } from "lucide-react";
@@ -8,6 +8,7 @@ import IdeaResultCard from "@/components/IdeiaCard/IdeaResultCard";
 import { ChatWidget } from "@/components/ChatWidget/ChatWidget";
 import AutoResizeTextarea from "@/components/AutoResizeTextarea/AutoResizeTextarea";
 import { useTheme } from "@/hooks/useTheme";
+import { emitHistoryRefreshRequest } from "@/events/historyEvents";
 
 const themeOptions = [
   "Tecnologia",
@@ -114,6 +115,9 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
     initialCurrentIdea ?? initialIdeas[0] ?? null
   );
   const [showThemeDropdown, setShowThemeDropdown] = useState(false);
+  const toggleThemeDropdown = useCallback(() => {
+    setShowThemeDropdown((prev) => !prev);
+  }, []);
 
   const { darkMode } = useTheme();
 
@@ -152,9 +156,58 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
 
     setCurrentIdea(newIdea);
     setIdeas((prev) => [newIdea, ...prev]);
+    emitHistoryRefreshRequest();
     setIsLoading(false);
   };
   
+
+  const themeLabel = theme || "Escolha o tema";
+  const themeToneClass = theme
+    ? darkMode
+      ? "text-blue-300"
+      : "text-blue-600"
+    : darkMode
+      ? "text-slate-400"
+      : "text-gray-500";
+
+  const renderThemeButton = ({
+    buttonClassName,
+    labelClassName,
+    iconClassName,
+  }: {
+    buttonClassName: string;
+    labelClassName: string;
+    iconClassName: string;
+  }) => (
+    <button
+      className={cn(
+        "flex items-center gap-2 rounded-lg transition-all",
+        buttonClassName
+      )}
+      onClick={toggleThemeDropdown}
+    >
+      <span className={cn(labelClassName, themeToneClass)}>{themeLabel}</span>
+      <ChevronDown
+        className={cn(
+          iconClassName,
+          "transition-transform",
+          showThemeDropdown && "rotate-180",
+          themeToneClass
+        )}
+      />
+    </button>
+  );
+
+  const getDropdownOptionClass = (isActive: boolean) => {
+    if (isActive) {
+      return darkMode
+        ? "bg-blue-500/10 text-blue-200"
+        : "bg-blue-50 text-blue-600";
+    }
+    return darkMode
+      ? "text-slate-100 hover:bg-slate-800/60"
+      : "text-gray-700 hover:bg-gray-50";
+  };
 
   const surpriseMe = async () => {
     const t = pickRandom(themeOptions);
@@ -221,43 +274,16 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
           >
             {/* Mobile */}
             <div className="flex items-center justify-between gap-2 sm:hidden mb-2">
-              <button
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-lg transition-all",
+              {renderThemeButton({
+                buttonClassName: cn(
+                  "px-4 py-2",
                   darkMode
                     ? "bg-slate-900/50 hover:bg-slate-800"
                     : "bg-white hover:opacity-80"
-                )}
-                onClick={() => setShowThemeDropdown((v) => !v)}
-              >
-                <span
-                  className={cn(
-                    "text-sm font-light",
-                    theme
-                      ? darkMode
-                        ? "text-blue-300"
-                        : "text-blue-600"
-                      : darkMode
-                        ? "text-slate-400"
-                        : "text-gray-500"
-                  )}
-                >
-                  {theme || "Escolha o tema"}
-                </span>
-                <ChevronDown
-                  className={cn(
-                    "w-4 h-4 transition-transform",
-                    showThemeDropdown && "rotate-180",
-                    theme
-                      ? darkMode
-                        ? "text-blue-300"
-                        : "text-blue-600"
-                      : darkMode
-                        ? "text-slate-400"
-                        : "text-gray-500"
-                  )}
-                />
-              </button>
+                ),
+                labelClassName: "text-sm font-light",
+                iconClassName: "w-4 h-4",
+              })}
 
               <span
                 className={cn(
@@ -272,43 +298,14 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
             <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-2">
               {/* Desktop */}
               <div className="hidden sm:flex items-center gap-2">
-                <button
-                  className={cn(
-                    "flex items-center gap-2 px-5 py-2.5 rounded-lg transition-all",
-                    darkMode
-                      ? "hover:bg-slate-800/80"
-                      : "hover:opacity-80"
-                  )}
-                  onClick={() => setShowThemeDropdown((v) => !v)}
-                >
-                  <span
-                    className={cn(
-                      "text-base font-light",
-                      theme
-                        ? darkMode
-                          ? "text-blue-300"
-                          : "text-blue-600"
-                        : darkMode
-                          ? "text-slate-400"
-                          : "text-gray-500"
-                    )}
-                  >
-                    {theme || "Escolha o tema"}
-                  </span>
-                  <ChevronDown
-                    className={cn(
-                      "w-5 h-5 transition-transform",
-                      showThemeDropdown && "rotate-180",
-                      theme
-                        ? darkMode
-                          ? "text-blue-300"
-                          : "text-blue-600"
-                        : darkMode
-                          ? "text-slate-400"
-                          : "text-gray-500"
-                    )}
-                  />
-                </button>
+                {renderThemeButton({
+                  buttonClassName: cn(
+                    "px-5 py-2.5",
+                    darkMode ? "hover:bg-slate-800/80" : "hover:opacity-80"
+                  ),
+                  labelClassName: "text-base font-light",
+                  iconClassName: "w-5 h-5",
+                })}
 
                 <div
                   className={cn(
@@ -364,13 +361,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
                       }}
                       className={cn(
                         "w-full text-left px-4 py-2 rounded-lg transition-all text-sm font-light",
-                        theme === opt
-                          ? darkMode
-                            ? "bg-blue-500/10 text-blue-200"
-                            : "bg-blue-50 text-blue-600"
-                          : darkMode
-                            ? "text-slate-100 hover:bg-slate-800/60"
-                            : "text-gray-700 hover:bg-gray-50"
+                        getDropdownOptionClass(theme === opt)
                       )}
                     >
                       {opt}
