@@ -1,6 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import { Bot, Loader2, Send, User } from 'lucide-react'
+import { useEffect, useRef, useState, useCallback } from 'react'
+import { Bot, Loader2, Send, User, Info } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { TokenProgressBar } from './TokenProgressBar'
 import type { ChatMessage } from '@/types/chat'
 
 type ChatProps = {
@@ -13,6 +14,11 @@ type ChatProps = {
   error?: string | null
   onSend: (message: string) => Promise<void> | void
   placeholder: string
+  onLoadOlderMessages?: () => Promise<void> | void
+  hasMoreMessages?: boolean
+  isLoadingOlder?: boolean
+  tokensRemaining?: number | null
+  chatType?: 'free' | 'ideas'
 }
 
 export function Chat({
@@ -25,13 +31,69 @@ export function Chat({
   error,
   onSend,
   placeholder,
+  onLoadOlderMessages,
+  hasMoreMessages = false,
+  isLoadingOlder = false,
+  tokensRemaining = null,
+  chatType = 'free',
 }: ChatProps) {
   const [input, setInput] = useState('')
   const bottomRef = useRef<HTMLDivElement | null>(null)
+  const topRef = useRef<HTMLDivElement | null>(null)
+  const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+  const [shouldScrollToBottom, setShouldScrollToBottom] = useState(true)
+  const [isNearTop, setIsNearTop] = useState(false)
+  const loadingOlderRef = useRef(false)
 
   useEffect(() => {
-    bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages, isSending, showTyping])
+    if (shouldScrollToBottom) {
+      bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
+    }
+  }, [messages, isSending, showTyping, shouldScrollToBottom])
+
+  const handleScroll = useCallback(() => {
+    const container = scrollContainerRef.current
+    if (!container || !onLoadOlderMessages || isLoadingOlder || !hasMoreMessages || loadingOlderRef.current) return
+
+    const scrollTop = container.scrollTop
+    const scrollHeight = container.scrollHeight
+    const clientHeight = container.clientHeight
+
+    if (scrollTop < 100) {
+      loadingOlderRef.current = true
+      const previousScrollHeight = scrollHeight
+      const result = onLoadOlderMessages()
+      if (result instanceof Promise) {
+        result
+          .then(() => {
+            setTimeout(() => {
+              if (container) {
+                const newScrollHeight = container.scrollHeight
+                container.scrollTop = newScrollHeight - previousScrollHeight + scrollTop
+              }
+              loadingOlderRef.current = false
+            }, 0)
+          })
+          .catch(() => {
+            loadingOlderRef.current = false
+          })
+      } else {
+        loadingOlderRef.current = false
+      }
+    }
+
+    const isAtBottom = scrollTop + clientHeight >= scrollHeight - 50
+    setShouldScrollToBottom(isAtBottom)
+    setIsNearTop(scrollTop < 100)
+  }, [onLoadOlderMessages, isLoadingOlder, hasMoreMessages])
+
+  useEffect(() => {
+    const container = scrollContainerRef.current
+    if (!container) return
+
+    container.addEventListener('scroll', handleScroll)
+    return () => container.removeEventListener('scroll', handleScroll)
+  }, [handleScroll])
 
   const handleSubmit = async () => {
     const content = input.trim()
@@ -42,7 +104,11 @@ export function Chat({
 
   return (
     <div className="flex h-full flex-col bg-white">
-      <div className="flex-1 overflow-y-auto bg-white px-6 py-6">
+      <div
+        ref={scrollContainerRef}
+        className="flex-1 overflow-y-auto bg-white px-6 py-6"
+        onScroll={handleScroll}
+      >
         {isLoading && messages.length === 0 ? (
           <div className="flex h-full items-center justify-center text-sm text-slate-500">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -50,6 +116,24 @@ export function Chat({
           </div>
         ) : (
           <div className="space-y-4">
+            {isLoadingOlder && (
+              <div className="flex items-center justify-center py-2">
+                <Loader2 className="h-4 w-4 animate-spin text-slate-400" />
+                <span className="ml-2 text-xs text-slate-500">Carregando mensagens antigas...</span>
+              </div>
+            )}
+            {hasMoreMessages && !isLoadingOlder && isNearTop && (
+              <div className="flex items-center justify-center py-2">
+                <button
+                  type="button"
+                  onClick={() => onLoadOlderMessages?.()}
+                  className="text-xs text-slate-500 hover:text-slate-700 underline"
+                >
+                  Carregar mensagens anteriores
+                </button>
+              </div>
+            )}
+            <div ref={topRef} />
             {messages.map((message) => (
               <MessageBubble key={message.id} message={message} />
             ))}
@@ -66,6 +150,19 @@ export function Chat({
         {error ? (
           <p className="mb-2 text-xs font-medium text-rose-600">{error}</p>
         ) : null}
+        {tokensRemaining !== null && (
+          <div className="mb-3">
+            <div className="mb-1.5 flex items-center gap-1.5">
+              <Info className="h-3 w-3 text-slate-400" />
+              <p className="text-xs text-slate-500">
+                {chatType === 'free' 
+                  ? 'Cada chat possui um limite de 10.000 tokens. O chat será renovado automaticamente após atingir o limite.'
+                  : 'Limite de 10.000 tokens. Ao atingir, o chat será bloqueado e será necessário criar uma nova conversa.'}
+              </p>
+            </div>
+            <TokenProgressBar tokensRemaining={tokensRemaining} size="sm" />
+          </div>
+        )}
         <div className="flex items-end gap-3">
           <textarea
             value={input}
