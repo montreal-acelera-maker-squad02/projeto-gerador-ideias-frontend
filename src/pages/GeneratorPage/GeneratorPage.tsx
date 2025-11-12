@@ -11,94 +11,8 @@ import { useTheme } from "@/hooks/useTheme";
 import { emitHistoryRefreshRequest } from "@/events/historyEvents";
 import { themeService, type Theme } from "@/services/themeService";
 import { ideaService } from "@/services/ideaService";
-import { AppFooter } from "@/components/Footer/AppFooter";
 
 const MAX_CONTEXT = 50;
-
-const pickRandom = <T,>(arr: readonly T[]) =>
-  arr[Math.floor(Math.random() * arr.length)];
-
-const sampleIdeas: Record<string, string[]> = {
-  Tecnologia: [
-    "IA que aprende com cada usuário e se adapta ao estilo de trabalho individual",
-    "Plataforma de código aberto que permite criar assistentes de IA personalizados",
-    "Sistema de backup quântico que protege dados contra qualquer tipo de falha",
-  ],
-  Educacao: [
-    "App que gamifica o aprendizado com desafios e recompensas diários",
-    "Plataforma de mentoria onde alunos ensinam uns aos outros",
-    "Tutor de IA que se adapta ao estilo de aprendizado de cada pessoa",
-  ],
-  Marketing: [
-    "Ferramenta que gera campanhas virais baseada em tendências em tempo real",
-    "Plataforma de influenciadores que conecta marcas com criadores micro",
-    "Dashboard que prediz o sucesso de campanhas antes do lançamento",
-  ],
-  Viagem: [
-    "App que conecta viajantes com moradores para experiências autênticas",
-    "Guia de viagem inteligente que aprende suas preferências",
-    "Plataforma de trocas de casa segura com verificação biométrica",
-  ],
-  Saude: [
-    "Wearable que detecta doenças 6 meses antes dos sintomas",
-    "App de meditação com VR para terapia personalizada",
-    "Sistema de telemedicina que funciona offline com IA",
-  ],
-  Negocio: [
-    "Marketplace onde IA faz orçamentos automáticos",
-    "Plataforma de consultoria com CEOs juniores mentorados",
-    "Seguro de crédito baseado em dados comportamentais",
-  ],
-  Arte: [
-    "App para artistas colaborarem em tempo real online",
-    "Galeria virtual imersiva com obras animadas",
-    "Ferramenta que transforma sentimentos em arte abstrata",
-  ],
-  Sustentabilidade: [
-    "App que calcula pegada de carbono em tempo real",
-    "Marketplace de produtos sustentáveis com impacto social",
-    "IA que otimiza rotas de entrega para reduzir emissões",
-  ],
-  Gaming: [
-    "Motor de jogos que cria mundos procedurais infinitos",
-    "Plataforma de eSports com IA anti-cheating",
-    "Streaming de jogos com latência zero usando computação quântica",
-  ],
-  Musica: [
-    "App que compõe música baseada em seu humor",
-    "Plataforma de colaboração de música em tempo real",
-    "IA que remixea suas músicas favoritas ao vivo",
-  ],
-};
-
-const RANDOM_CONTEXTS = [
-  "Lançamento em 2 semanas",
-  "Campanha com influenciadores",
-  "Foco em sustentabilidade",
-  "Priorizar experiência mobile",
-  "Monetização por assinatura",
-] as const;
-
-const RESPONSE_WINDOW = 600;
-let responseSeed = 0;
-function nextResponseTime() {
-  responseSeed = (responseSeed + 137) % RESPONSE_WINDOW;
-  return 200 + responseSeed;
-}
-
-function buildLocalIdea(themeName: string, contextText: string): Idea {
-  const pool = sampleIdeas[themeName as keyof typeof sampleIdeas] ?? sampleIdeas.Tecnologia;
-  const content = pickRandom(pool);
-  return {
-    id: String(Date.now()),
-    theme: themeName,
-    context: contextText,
-    content,
-    timestamp: new Date(),
-    isFavorite: false,
-    responseTime: nextResponseTime(),
-  };
-}
 
 const themeOptions = [
   "Tecnologia",
@@ -135,7 +49,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
 }) => {
   const { darkMode } = useTheme();
   const [themes, setThemes] = useState<Theme[]>(FALLBACK_THEMES);
-  const [theme, setTheme] = useState<string>(defaultTheme);
+  const [theme, setTheme] = useState<number | null>(null);
   const [context, setContext] = useState(defaultContext);
   const [isLoading, setIsLoading] = useState(false);
   const [ideas, setIdeas] = useState<Idea[]>(initialIdeas);
@@ -182,11 +96,11 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
   }, [ideas]);
 
   const resolvedThemeId = useMemo(() => {
-    return themes.find(opt => opt.name === theme)?.id ?? null;
+    return themes.find(opt => opt.id === theme)?.id ?? null;
   }, [theme, themes]);
 
   const generateIdea = async (themeIdOverride?: number, contextOverride?: string) => {
-    const themeIdToUse = themeIdOverride ?? resolvedThemeId;
+    const themeIdToUse = themeIdOverride ?? theme;
     const contextToUse = contextOverride ?? context;
     const themeNameToUse =
       themes.find((opt) => opt.id === themeIdToUse)?.name || theme || "Tecnologia";
@@ -200,16 +114,12 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
     const skipCache = hasGenerated || isSurprise;
 
     try {
-      let newIdea: Idea
-      if (!themeIdToUse || import.meta.env.MODE === "test") {
-        newIdea = buildLocalIdea(themeNameToUse, contextToUse)
-      } else {
-        newIdea = await ideaService.generateIdea(
-          themeIdToUse,
-          contextToUse,
-          skipCache
-        )
-      }
+      const themeIdForService = themeIdToUse ?? themes[0]?.id ?? 1;
+      const newIdea = await ideaService.generateIdea(
+        themeIdForService,
+        contextToUse,
+        skipCache
+      );
 
       setCurrentIdea(newIdea);
       setIdeas(prev => [newIdea, ...prev]);
@@ -273,31 +183,22 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
   const surpriseMe = async () => {
     setIsLoading(true);
     setError(null);
-
-    const runLocalSurprise = () => {
-      const surpriseTheme = pickRandom(themeOptions);
-      const surpriseContext = pickRandom(RANDOM_CONTEXTS);
-      const idea = buildLocalIdea(surpriseTheme, surpriseContext);
-      setCurrentIdea(idea);
-      setIdeas(prev => [idea, ...prev]);
-      setTheme(idea.theme);
-      setContext(idea.context || "");
-    };
-
+    
     try {
-      if (import.meta.env.MODE === "test") {
-        runLocalSurprise();
-      } else {
-        const newIdea = await ideaService.generateSurpriseIdea();
-        setCurrentIdea(newIdea);
-        setIdeas(prev => [newIdea, ...prev]);
-        setTheme(newIdea.theme || "");
-        setContext(newIdea.context || "");
-      }
+      const newIdea = await ideaService.generateSurpriseIdea();
+
+      setCurrentIdea(newIdea);
+      setIdeas(prev => [newIdea, ...prev]);
+
+      const themeLabel = (newIdea.theme || "").toLowerCase();
+      const matchedTheme = themes.find(opt => (opt.name || "").toLowerCase() === themeLabel);
+      
+      setTheme(matchedTheme?.id ?? null);
+      setContext(newIdea.context || "");
+
     } catch (err: any) {
       console.error("Falha ao gerar ideia surpresa:", err);
-      runLocalSurprise();
-      setError(err.message || "Não foi possível gerar a ideia. Usei um fallback local.");
+      setError(err.message || "Não foi possível gerar a ideia. Tente novamente.");
     } finally {
       setIsLoading(false);
     }
@@ -326,8 +227,8 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
   };
 
   const selectedThemeLabel = useMemo(() => {
-    return theme || "Escolha o tema";
-  }, [theme]);
+    return themes.find(opt => opt.id === theme)?.name || "Escolha o tema";
+  }, [theme, themes]);
 
   return (
     <div
@@ -420,12 +321,12 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
                           <button
                             key={t.id}
                             onClick={() => {
-                              setTheme(t.name ?? "");
+                              setTheme(t.id ?? null);
                               setShowThemeDropdown(false);
                             }}
                             className={cn(
                               "w-full text-left px-4 py-2 rounded-lg transition-all text-sm font-light",
-                              theme === t.name
+                              theme === t.id
                                 ? darkMode
                                   ? "bg-blue-900/30 text-blue-400"
                                   : "bg-blue-50 text-blue-600"
