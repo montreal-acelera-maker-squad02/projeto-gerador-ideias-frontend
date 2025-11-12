@@ -11,11 +11,13 @@ export const LoginForm: React.FC = () => {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState(""); // <-- Novo estado
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
+    setErrorMessage(""); // Limpa mensagens antigas
 
     try {
       const data = await authService.login(email, password);
@@ -42,7 +44,7 @@ export const LoginForm: React.FC = () => {
       navigate("/generator");
     } catch (error: any) {
       console.error("Erro ao logar:", error?.response?.data || error?.message);
-      alert("Falha ao fazer login. Verifique suas credenciais.");
+      setErrorMessage("Falha ao fazer login. Verifique suas credenciais."); // <-- Atualiza o estado
     } finally {
       setLoading(false);
     }
@@ -77,7 +79,14 @@ export const LoginForm: React.FC = () => {
         />
       </div>
 
-      {/* Bot�o de login */}
+      {/* Mensagem de erro */}
+      {errorMessage && (
+        <p className="text-red-500 text-sm text-center -mt-2">
+          {errorMessage}
+        </p>
+      )}
+
+      {/* Botão de login */}
       <button
         type="submit"
         disabled={loading}
@@ -91,4 +100,3 @@ export const LoginForm: React.FC = () => {
     </form>
   );
 };
-

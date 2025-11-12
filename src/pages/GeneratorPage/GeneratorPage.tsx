@@ -578,3 +578,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
     </div>
   );
 };
+function toggleThemeDropdown(event: MouseEvent<HTMLButtonElement, MouseEvent>): void {
+  throw new Error("Function not implemented.");
+}
+
