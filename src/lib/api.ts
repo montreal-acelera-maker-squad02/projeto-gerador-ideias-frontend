@@ -41,7 +41,6 @@ export function clearAuthTokens() {
   } catch {}
 }
 
-// Mantido para compatibilidade
 export function getAuthToken(): string | null {
   return getAccessToken()
 }
@@ -52,6 +51,10 @@ export function setAuthToken(token: string) {
 
 export function clearAuthToken() {
   clearAuthTokens()
+}
+
+export function isAuthenticated(): boolean {
+  return getAccessToken() !== null
 }
 
 let isRefreshing = false
@@ -118,21 +121,28 @@ export async function apiFetch(input: string, init?: RequestInit): Promise<Respo
 
   let response = await fetch(input, { ...init, headers, credentials: 'include' })
 
-  // Se receber 401, tenta renovar o token e refaz a requisição
-  if (response.status === 401 && token) {
+  if ((response.status === 401 || response.status === 403) && token) {
     const newToken = await refreshAccessToken()
     
     if (newToken) {
       headers.set('Authorization', `Bearer ${newToken}`)
-      // Refaz a requisição original
       response = await fetch(input, { ...init, headers, credentials: 'include' })
+      
+      if (response.status === 401 || response.status === 403) {
+        clearAuthTokens()
+        if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+          window.location.href = '/login'
+        }
+      }
     } else {
-      // Se não conseguiu renovar, limpa os tokens
       clearAuthTokens()
-      // Redireciona para login se estiver em uma página protegida
       if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
         window.location.href = '/login'
       }
+    }
+  } else if ((response.status === 401 || response.status === 403) && !token) {
+    if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
+      window.location.href = '/login'
     }
   }
 

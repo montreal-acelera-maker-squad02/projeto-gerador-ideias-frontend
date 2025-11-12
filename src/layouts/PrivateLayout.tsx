@@ -1,12 +1,20 @@
-// src/layouts/PrivateLayout.tsx
-import { Outlet } from "react-router-dom";
+import { useEffect } from "react";
+import { Outlet, useNavigate } from "react-router-dom";
 import { useTheme } from "@/hooks/useTheme";
 import { AppHeader } from "@/components/Header/AppHeader";
 import { AppFooter } from "@/components/Footer/AppFooter";
 import { cn } from "@/lib/utils";
+import { isAuthenticated } from "@/lib/api";
 
 export function PrivateLayout() {
   const { darkMode } = useTheme();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!isAuthenticated()) {
+      navigate("/login", { replace: true });
+    }
+  }, [navigate]);
 
   return (
     <div
@@ -16,7 +24,6 @@ export function PrivateLayout() {
       )}
     >
 
-      {/* Decorative Gradient */}
       <div
         className={cn(
           "fixed top-0 left-0 right-0 h-96 pointer-events-none z-0",
@@ -28,7 +35,6 @@ export function PrivateLayout() {
       
       <AppHeader />
 
-      {/* conteúdo da página */}
       <main className="flex-1 relative z-10">
         <Outlet />
       </main>
