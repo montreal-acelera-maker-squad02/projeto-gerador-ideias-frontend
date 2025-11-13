@@ -1,7 +1,17 @@
 import { apiFetch } from "@/lib/api"
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard"
+import { emitHistoryRefreshRequest } from "@/events/historyEvents";
 
-function mapResponseToIdea(response: any): Idea {
+type IdeaApiResponse = {
+  id: string | number;
+  theme: string;
+  content: string;
+  createdAt?: string;
+  executionTimeMs?: number;
+  context?: string;
+};
+
+function mapResponseToIdea(response: IdeaApiResponse): Idea {
   const newIdea: Idea = {
     id: String(response.id),
     theme: response.theme,
@@ -44,6 +54,9 @@ export const ideaService = {
     }
 
     const responseData = await response.json();
+
+    emitHistoryRefreshRequest();
+
     return mapResponseToIdea(responseData);
   },
 
@@ -61,6 +74,9 @@ export const ideaService = {
     }
 
     const responseData = await response.json();
+
+    emitHistoryRefreshRequest();
+
     return mapResponseToIdea(responseData);
   },
 
@@ -71,6 +87,8 @@ export const ideaService = {
       const msg = await res.text()
       throw new Error(msg || "Erro ao favoritar ideia")
     }
+
+    emitHistoryRefreshRequest();
   },
 
   async getFavorites(): Promise<Idea[]> {
