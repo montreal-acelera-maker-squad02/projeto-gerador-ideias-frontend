@@ -32,14 +32,23 @@ export const Hero: React.FC = () => {
     <section className="min-h-screen flex flex-col items-center justify-center text-center bg-[#F9F9FB] text-[#1E1E1E] px-8 pt-24 pb-24">
       {/* === TÍTULO === */}
       <h1 className="text-5xl md:text-6xl font-extrabold tracking-tight mb-4">
-        Transforme palavras em{" "}
-        <span className="text-gray-700 font-bold">ideias brilhantes</span>
+        Transforme palavras em <br/>
+        {" "}
+        <span
+          className="
+            font-bold
+            bg-linear-to-r from-purple-500 to-blue-600
+            bg-clip-text text-transparent
+          "
+        >
+          ideias brilhantes
+        </span>
       </h1>
 
       {/* === DESCRIÇÃO === */}
       <p className="text-lg text-gray-500 font-normal leading-relaxed max-w-2xl mb-12">
-        Gere nomes de startups, slogans, produtos e posts usando IA. <br />
-        Crie em minutos e experimente por si mesmo.
+        Escolha um tema, descreva o que você precisa e deixe o Criaitor gerar ideias para você.
+Organize tudo em cards, explore ideias da comunidade, marque favoritos e converse com a Aiko para lapidar seus próximos passos.
       </p>
 
       {/* === INPUT + BOTÃO === */}
