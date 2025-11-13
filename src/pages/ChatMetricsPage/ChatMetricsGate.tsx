@@ -1,7 +1,7 @@
-// src/pages/ChatMetricsPage/ChatMetricsGate.tsx
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
+import { getUserRole, checkAdminAccess } from "@/lib/jwt";
 import { UserChatMetricsPage } from "./UserChatMetricPage";
 import { AdminChatMetricsPage } from "./AdminChatMetricsPage";
 
@@ -14,28 +14,27 @@ export function ChatMetricsGate() {
   const [role, setRole] = useState<Role | null>(null);
 
   useEffect(() => {
-    // 🔧 INTEGRAÇÃO VAI ENTRAR AQUI
-    // Hoje: stub usando localStorage só pra ter um comportamento previsível.
-    // - Defina localStorage.setItem("mockChatMetricsRole", "ADMIN" | "USER")
-    //   para testar os dois fluxos.
     const resolveRole = async () => {
       try {
-        // 👉 Trocar este bloco por chamada real, ex.:
-        // const session = await authService.getSession();
-        // setRole(session.isAdmin ? "ADMIN" : "USER");
-
-        const stored = globalThis.localStorage.getItem("mockChatMetricsRole");
-        if (stored === "ADMIN" || stored === "USER") {
-          setRole(stored);
-        } else {
-          // comportamento default: usuário normal
-          setRole("USER");
+        let userRole = await getUserRole();
+        
+        if (userRole === 'ADMIN') {
+          setRole("ADMIN");
+          setStatus("ready");
+          return;
         }
 
+        try {
+          const isAdmin = await checkAdminAccess();
+          setRole(isAdmin ? "ADMIN" : "USER");
+        } catch {
+          setRole("USER");
+        }
         setStatus("ready");
       } catch (err) {
         console.error("[ChatMetricsGate] Failed to resolve role", err);
-        setStatus("error");
+        setRole("USER");
+        setStatus("ready");
       }
     };
 

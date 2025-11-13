@@ -91,6 +91,141 @@ export const chatService = {
       createdAt: item.createdAt || null,
     }))
   },
+
+  async getChatLogs(params?: {
+    date?: string;
+    page?: number;
+    size?: number;
+  }): Promise<{
+    selectedDate: string;
+    summary: {
+      totalInteractions: number;
+      totalTokensInput: number;
+      totalTokensOutput: number;
+      totalTokens: number;
+      averageResponseTimeMs: number;
+    };
+    interactions: Array<{
+      interactionId: number;
+      timestamp: string;
+      sessionId: number;
+      chatType: string;
+      ideaId: number | null;
+      userMessage: string;
+      assistantMessage: string;
+      metrics: {
+        tokensInput: number;
+        tokensOutput: number;
+        totalTokens: number;
+        responseTimeMs: number;
+      };
+    }>;
+    pagination: {
+      totalElements: number;
+      totalPages: number;
+      currentPage: number;
+      hasNext: boolean;
+      hasPrevious: boolean;
+    };
+  }> {
+    const url = new URL('/api/chat/logs', window.location.origin)
+    if (params?.date) url.searchParams.set('date', params.date)
+    if (params?.page) url.searchParams.set('page', params.page.toString())
+    if (params?.size) url.searchParams.set('size', params.size.toString())
+
+    const response = await apiFetch(url.pathname + url.search)
+
+    if (!response.ok) {
+      let errorMessage = 'Erro ao buscar logs'
+      try {
+        const errorText = await response.text()
+        if (errorText) {
+          try {
+            const errorJson = JSON.parse(errorText)
+            errorMessage = errorJson.message || errorJson.error || errorText
+          } catch {
+            errorMessage = errorText
+          }
+        }
+      } catch (e) {
+        errorMessage = `Erro ${response.status}: ${response.statusText}`
+      }
+      throw new Error(errorMessage)
+    }
+
+    return await response.json()
+  },
+
+  async getAdminChatLogs(params?: {
+    date?: string;
+    userId?: number;
+    page?: number;
+    size?: number;
+  }): Promise<{
+    selectedDate: string;
+    filteredUserId: number | null;
+    summary: {
+      totalInteractions: number;
+      totalTokensInput: number;
+      totalTokensOutput: number;
+      totalTokens: number;
+      averageResponseTimeMs: number;
+    };
+    interactions: Array<{
+      interactionId: number;
+      timestamp: string;
+      sessionId: number;
+      chatType: string;
+      ideaId: number | null;
+      userId: number;
+      userName: string;
+      userEmail: string;
+      userIp: string;
+      userMessage: string;
+      assistantMessage: string;
+      metrics: {
+        tokensInput: number;
+        tokensOutput: number;
+        totalTokens: number;
+        responseTimeMs: number;
+      };
+    }>;
+    pagination: {
+      totalElements: number;
+      totalPages: number;
+      currentPage: number;
+      hasNext: boolean;
+      hasPrevious: boolean;
+    };
+  }> {
+    const url = new URL('/api/chat/admin/logs', window.location.origin)
+    if (params?.date) url.searchParams.set('date', params.date)
+    if (params?.userId) url.searchParams.set('userId', params.userId.toString())
+    if (params?.page) url.searchParams.set('page', params.page.toString())
+    if (params?.size) url.searchParams.set('size', params.size.toString())
+
+    const response = await apiFetch(url.pathname + url.search)
+
+    if (!response.ok) {
+      let errorMessage = 'Erro ao buscar logs de administrador'
+      try {
+        const errorText = await response.text()
+        if (errorText) {
+          try {
+            const errorJson = JSON.parse(errorText)
+            errorMessage = errorJson.message || errorJson.error || errorText
+          } catch {
+            errorMessage = errorText
+          }
+        }
+      } catch (e) {
+        errorMessage = `Erro ${response.status}: ${response.statusText}`
+      }
+      throw new Error(errorMessage)
+    }
+
+    return await response.json()
+  },
 }
 
 function mapResponseToSession(data: any): ChatSession {

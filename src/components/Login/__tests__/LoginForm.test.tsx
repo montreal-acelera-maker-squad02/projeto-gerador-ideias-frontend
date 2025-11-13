@@ -76,7 +76,6 @@ describe('LoginForm', () => {
 
   it('exibe alerta quando o login falha', async () => {
     loginMock.mockRejectedValue(new Error('invalid'))
-    const alertMock = vi.spyOn(window, 'alert').mockImplementation(() => undefined)
 
     renderWithProviders(<LoginForm />)
 
@@ -86,7 +85,10 @@ describe('LoginForm', () => {
 
     await user.click(screen.getByRole('button', { name: /fazer login/i }))
 
-    expect(alertMock).toHaveBeenCalled()
-    expect(mockNavigate).not.toHaveBeenCalled()
+    expect(await screen.findByText(/falha ao fazer login/i)).toBeInTheDocument()
+    
+    // Aguarda um pouco para garantir que o navigate não foi chamado
+    await new Promise(resolve => setTimeout(resolve, 100))
+    expect(mockNavigate).toHaveBeenCalledTimes(0)
   })
 })
