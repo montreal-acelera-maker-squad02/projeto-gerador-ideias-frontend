@@ -48,7 +48,7 @@ export const Hero: React.FC = () => {
       {/* === DESCRIÇÃO === */}
       <p className="text-lg text-gray-500 font-normal leading-relaxed max-w-2xl mb-12">
         Escolha um tema, descreva o que você precisa e deixe o Criaitor gerar ideias para você.
-Organize tudo em cards, explore ideias da comunidade, marque favoritos e converse com a Aiko para lapidar seus próximos passos.
+        Organize tudo em cards, explore ideias da comunidade, marque favoritos e converse com a Aiko para lapidar seus próximos passos.
       </p>
 
       {/* === INPUT + BOTÃO === */}
