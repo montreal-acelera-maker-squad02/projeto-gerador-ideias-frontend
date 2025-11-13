@@ -22,7 +22,7 @@ export const Navbar: React.FC<NavbarProps> = ({ hideActions = false }) => {
             <img
               src={creaitorIcon}
               alt="Logo do Criaitor"
-              className="h-10 w-auto object-contain"
+              className="h-7 w-auto object-contain"
               loading="lazy"
               decoding="async"
               draggable={false}
