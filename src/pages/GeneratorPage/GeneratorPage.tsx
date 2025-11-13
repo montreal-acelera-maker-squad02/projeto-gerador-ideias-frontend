@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
 import StatsCardWithIcon from "@/components/StatsCard/StatsCardWithIcon";
 import { Lightbulb, Clock, Star, ChevronDown, Shuffle } from "lucide-react";
@@ -8,7 +8,6 @@ import IdeaResultCard from "@/components/IdeiaCard/IdeaResultCard";
 import { ChatWidget } from "@/components/ChatWidget/ChatWidget";
 import AutoResizeTextarea from "@/components/AutoResizeTextarea/AutoResizeTextarea";
 import { useTheme } from "@/hooks/useTheme";
-import { emitHistoryRefreshRequest } from "@/events/historyEvents";
 import { themeService, type Theme } from "@/services/themeService";
 import { ideaService } from "@/services/ideaService";
 
@@ -41,7 +40,6 @@ type GeneratorPageProps = {
 };
 
 export const GeneratorPage: React.FC<GeneratorPageProps> = ({
-  defaultTheme = "",
   defaultContext = "",
   initialIdeas = [],
   initialCurrentIdea = null,
@@ -95,15 +93,15 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
     return Math.round(sum / validTimes.length);
   }, [ideas]);
 
-  const resolvedThemeId = useMemo(() => {
-    return themes.find(opt => opt.id === theme)?.id ?? null;
-  }, [theme, themes]);
+  // const resolvedThemeId = useMemo(() => {
+  //   return themes.find(opt => opt.id === theme)?.id ?? null;
+  // }, [theme, themes]);
 
   const generateIdea = async (themeIdOverride?: number, contextOverride?: string) => {
     const themeIdToUse = themeIdOverride ?? theme;
     const contextToUse = contextOverride ?? context;
-    const themeNameToUse =
-      themes.find((opt) => opt.id === themeIdToUse)?.name || theme || "Tecnologia";
+    // const themeNameToUse =
+    //   themes.find((opt) => opt.id === themeIdToUse)?.name || theme || "Tecnologia";
 
     if (((!themeIdToUse) && import.meta.env.MODE !== "test") || !contextToUse.trim() || isLoading) return;
 
@@ -124,15 +122,15 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
       setCurrentIdea(newIdea);
       setIdeas(prev => [newIdea, ...prev]);
       setHasGenerated(true);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Falha ao gerar ideia:", err);
-      setError(err.message || "Não foi possível gerar a ideia. Tente novamente.");
+      const message = err instanceof Error ? err.message : "Não foi possível gerar a ideia. Tente novamente.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const themeLabel = theme || "Escolha o tema";
   const themeToneClass = theme
     ? darkMode
       ? "text-blue-300"
@@ -141,49 +139,49 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
       ? "text-slate-400"
       : "text-gray-500";
 
-  const renderThemeButton = ({
-    buttonClassName,
-    labelClassName,
-    iconClassName,
-  }: {
-    buttonClassName: string;
-    labelClassName: string;
-    iconClassName: string;
-  }) => (
-    <button
-      className={cn(
-        "flex items-center gap-2 rounded-lg transition-all",
-        buttonClassName
-      )}
-      onClick={toggleThemeDropdown}
-    >
-      <span className={cn(labelClassName, themeToneClass)}>{themeLabel}</span>
-      <ChevronDown
-        className={cn(
-          iconClassName,
-          "transition-transform",
-          showThemeDropdown && "rotate-180",
-          themeToneClass
-        )}
-      />
-    </button>
-  );
+  // const renderThemeButton = ({
+  //   buttonClassName,
+  //   labelClassName,
+  //   iconClassName,
+  // }: {
+  //   buttonClassName: string;
+  //   labelClassName: string;
+  //   iconClassName: string;
+  // }) => (
+  //   <button
+  //     className={cn(
+  //       "flex items-center gap-2 rounded-lg transition-all",
+  //       buttonClassName
+  //     )}
+  //     onClick={toggleThemeDropdown}
+  //   >
+  //     <span className={cn(labelClassName, themeToneClass)}>{themeLabel}</span>
+  //     <ChevronDown
+  //       className={cn(
+  //         iconClassName,
+  //         "transition-transform",
+  //         showThemeDropdown && "rotate-180",
+  //         themeToneClass
+  //       )}
+  //     />
+  //   </button>
+  // );
 
-  const getDropdownOptionClass = (isActive: boolean) => {
-    if (isActive) {
-      return darkMode
-        ? "bg-blue-500/10 text-blue-200"
-        : "bg-blue-50 text-blue-600";
-    }
-    return darkMode
-      ? "text-slate-100 hover:bg-slate-800/60"
-      : "text-gray-700 hover:bg-gray-50";
-  };
+  // const getDropdownOptionClass = (isActive: boolean) => {
+  //   if (isActive) {
+  //     return darkMode
+  //       ? "bg-blue-500/10 text-blue-200"
+  //       : "bg-blue-50 text-blue-600";
+  //   }
+  //   return darkMode
+  //     ? "text-slate-100 hover:bg-slate-800/60"
+  //     : "text-gray-700 hover:bg-gray-50";
+  // };
 
   const surpriseMe = async () => {
     setIsLoading(true);
     setError(null);
-    
+
     try {
       const newIdea = await ideaService.generateSurpriseIdea();
 
@@ -192,13 +190,14 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
 
       const themeLabel = (newIdea.theme || "").toLowerCase();
       const matchedTheme = themes.find(opt => (opt.name || "").toLowerCase() === themeLabel);
-      
+
       setTheme(matchedTheme?.id ?? null);
       setContext(newIdea.context || "");
 
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Falha ao gerar ideia surpresa:", err);
-      setError(err.message || "Não foi possível gerar a ideia. Tente novamente.");
+      const message = err instanceof Error ? err.message : "Não foi possível gerar a ideia. Tente novamente.";
+      setError(message);
     } finally {
       setIsLoading(false);
     }
@@ -342,7 +341,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
                     </div>
                   )}
                 </div>
-                
+
                 <div
                   className={cn(
                     "w-px h-8 hidden sm:block",
@@ -479,7 +478,3 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
     </div>
   );
 };
-function toggleThemeDropdown(event: MouseEvent<HTMLButtonElement, MouseEvent>): void {
-  throw new Error("Function not implemented.");
-}
-

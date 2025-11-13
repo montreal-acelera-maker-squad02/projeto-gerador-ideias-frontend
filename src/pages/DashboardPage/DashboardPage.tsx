@@ -1,5 +1,5 @@
 // pages/DashboardPage/DashboardPage.tsx
-import { useMemo } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import SectionContainer from "@/components/SectionContainer/SectionContainer";
 import StatsKPI from "@/components/StatsCard/StatsKPI";
 import { cn } from "@/lib/utils";
@@ -14,6 +14,8 @@ import {
   Cell,
 } from "recharts";
 import { useTheme } from "@/hooks/useTheme";
+import { statsService, type DashboardStats } from "@/services/statsService";
+import { subscribeHistoryRefresh } from "@/events/historyEvents";
 
 export type Idea = {
   id: string;
@@ -31,17 +33,37 @@ export type DashboardPageProps = {
 
 export const DashboardPage: React.FC<DashboardPageProps> = ({ ideas = [] }) => {
   const { darkMode } = useTheme();
-  
-  const favoriteIdeas = useMemo(
-    () => ideas.filter((i) => i.isFavorite),
-    [ideas]
-  );
+  const [stats, setStats] = useState<DashboardStats | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const averageResponseTime = useMemo(() => {
-    const times = ideas.map((i) => i.responseTime ?? 0).filter((n) => n > 0);
-    if (times.length === 0) return 0;
-    return Math.round(times.reduce((a, b) => a + b, 0) / times.length);
-  }, [ideas]);
+  const fetchDashboardStats = useCallback(async () => {
+    try {
+      const dashboardStats = await statsService.getStats();
+      setStats(dashboardStats);
+    } catch (e: unknown) {
+      console.error("Falha ao buscar estatísticas do dashboard:", e);
+      setStats({ totalIdeas: 0, totalFavorites: 0, averageResponseTime: 0 });
+    } finally {
+      setIsLoading((loading) => {
+        return loading ? false : loading;
+      });
+    }
+  }, []);
+
+  useEffect(() => {
+    setIsLoading(true);
+    fetchDashboardStats();
+    const unsubscribe = subscribeHistoryRefresh(fetchDashboardStats);
+
+    return () => unsubscribe();
+  }, [fetchDashboardStats]);
+
+  useEffect(() => {
+    const handleFocus = () => fetchDashboardStats();
+    window.addEventListener('focus', handleFocus);
+
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [fetchDashboardStats]);
 
   const byTheme = useMemo(() => {
     const m = new Map<string, number>();
@@ -69,19 +91,19 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ ideas = [] }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <StatsKPI
           title="Total de Ideias"
-          value={ideas.length}
+          value={isLoading ? "..." : stats?.totalIdeas ?? 0}
           className="animate-fadeInUp"
         />
         <StatsKPI
           title="Favoritos"
-          value={favoriteIdeas.length}
+          value={isLoading ? "..." : stats?.totalFavorites ?? 0}
           className="animate-fadeInUp animation-delay-100"
         />
         <StatsKPI
           title="Tempo Médio"
           value={
             <span>
-              {averageResponseTime}
+              {isLoading ? "..." : Math.round(stats?.averageResponseTime ?? 0)}
               <span
                 className={cn(
                   "text-sm ml-1 font-light",
