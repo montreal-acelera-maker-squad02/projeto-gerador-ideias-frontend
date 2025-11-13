@@ -276,7 +276,7 @@ export function AdminChatMetricsPage() {
               Admin • Usage
             </p>
             <h1 className="text-2xl font-semibold">
-              Métricas de uso do chatbot (todos os usuários)
+              Métricas de uso da Aiko IA para todos os usuários
             </h1>
             <p className={cn("mt-2 text-sm md:text-base", theme.muted)}>
               Acompanhe as interações de todos os usuários por período,

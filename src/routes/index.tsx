@@ -9,8 +9,7 @@ import FavoritesPage from '@/pages/FavoritesPage/FavoritesPage';
 import DashboardPage from '@/pages/DashboardPage/DashboardPage';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { PrivateLayout } from '@/layouts/PrivateLayout';
-import { UserChatMetricsPage } from '@/pages/ChatMetricsPage/UserChatMetricPage';
-import { AdminChatMetricsPage } from '@/pages/ChatMetricsPage/AdminChatMetricsPage';
+import { ChatMetricsGate } from '@/pages/ChatMetricsPage/ChatMetricsGate';
 
 
 const AppRoutes: React.FC = () => {
@@ -22,6 +21,7 @@ const AppRoutes: React.FC = () => {
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />                
+                    <Route path="/chatbot-metrics" element={<ChatMetricsGate />} />
                 </Route>
 
                 {/* Private Routes */}
@@ -30,8 +30,6 @@ const AppRoutes: React.FC = () => {
                     <Route path="/history" element={<HistoryPage />} />
                     <Route path="/favorites" element={<FavoritesPage />} />
                     <Route path="/dashboard" element={<DashboardPage />} />
-                    <Route path="/chatmetrics" element={<UserChatMetricsPage />} />
-                    <Route path="/adminchatmetrics" element={<AdminChatMetricsPage />} />
                 </Route>
 
             </Routes>
