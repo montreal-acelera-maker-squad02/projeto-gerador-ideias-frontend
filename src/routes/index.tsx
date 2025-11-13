@@ -9,6 +9,7 @@ import FavoritesPage from '@/pages/FavoritesPage/FavoritesPage';
 import DashboardPage from '@/pages/DashboardPage/DashboardPage';
 import { PublicLayout } from '@/layouts/PublicLayout';
 import { PrivateLayout } from '@/layouts/PrivateLayout';
+import { UserChatMetricsPage } from '@/pages/ChatMetricsPage/UserChatMetricPage';
 
 
 const AppRoutes: React.FC = () => {
@@ -28,6 +29,7 @@ const AppRoutes: React.FC = () => {
                     <Route path="/history" element={<HistoryPage />} />
                     <Route path="/favorites" element={<FavoritesPage />} />
                     <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/chatmetrics" element={<UserChatMetricsPage />} />
                 </Route>
 
             </Routes>
