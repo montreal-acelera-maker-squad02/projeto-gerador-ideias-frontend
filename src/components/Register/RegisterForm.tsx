@@ -3,6 +3,8 @@ import { useNavigate, useLocation } from "react-router-dom";
 import { authService } from "@/services/authService";
 import { TextField } from "@/components/common/TextField";
 import { PasswordToggle } from "@/components/common/PasswordToggle";
+import { setAuthTokens } from "@/lib/api";
+import { prefetchIdeas } from "@/hooks/useIdeas";
 
 export const RegisterForm: React.FC = () => {
   const navigate = useNavigate();
@@ -77,17 +79,38 @@ export const RegisterForm: React.FC = () => {
     setLoading(true);
 
     try {
-      const data = await authService.register(
+      await authService.register(
         form.name,
         form.email,
         form.password,
         form.confirmPassword
       );
 
-      console.log(" Usuário registrado com sucesso:", data);
-      navigate("/login", { replace: true });
+      const loginData = await authService.login(form.email, form.password);
+
+      if (loginData?.accessToken && loginData?.refreshToken) {
+        setAuthTokens(loginData.accessToken, loginData.refreshToken);
+      } else {
+        throw new Error("Falha ao obter tokens após registro. Tente fazer login manualmente.");
+      }
+
+      if (loginData?.name || loginData?.email) {
+        const userData = {
+          uuid: loginData.uuid,
+          name: loginData.name,
+          email: loginData.email,
+        };
+        localStorage.setItem("user", JSON.stringify(userData));
+      }
+
+      void prefetchIdeas().catch((err) =>
+        console.warn("Não foi possível pré-carregar o histórico", err)
+      );
+
+      navigate("/generator", { replace: true });
+
     } catch (error: any) {
-      console.error("Erro ao cadastrar:", error.response);
+      console.error("Erro ao cadastrar ou logar:", error.response || error.message);
 
       if (error.response?.status === 409) {
         setError("Este e-mail já está em uso.");
@@ -97,6 +120,9 @@ export const RegisterForm: React.FC = () => {
           error.response.data?.errors?.[0] ||
           "Erro de validação nos dados.";
         setError(backendError);
+      } else if (error.message && error.message.includes("Falha ao obter tokens")) {
+         setError(error.message);
+         navigate("/login");
       } else {
         setError("Falha ao realizar cadastro. Tente novamente mais tarde.");
       }

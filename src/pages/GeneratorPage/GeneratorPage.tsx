@@ -10,8 +10,11 @@ import AutoResizeTextarea from "@/components/AutoResizeTextarea/AutoResizeTextar
 import { useTheme } from "@/hooks/useTheme";
 import { themeService, type Theme } from "@/services/themeService";
 import { ideaService } from "@/services/ideaService";
+import { GeneratorErrorCard } from "@/components/GeneratorErrorCard/GeneratorErrorCard";
 
 const MAX_CONTEXT = 50;
+const INAPPROPRIATE_CONTENT = "Desculpe, não posso gerar ideias sobre esse tema.";
+const FRIENDLY_ERROR = "Erro ao gerar ideia. Tente novamente em alguns minutos.";
 
 const themeOptions = [
   "Tecnologia",
@@ -118,14 +121,17 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
         contextToUse,
         skipCache
       );
-
-      setCurrentIdea(newIdea);
-      setIdeas(prev => [newIdea, ...prev]);
-      setHasGenerated(true);
+      if (newIdea.content.includes(INAPPROPRIATE_CONTENT)) {
+        setError(INAPPROPRIATE_CONTENT);
+        setHasGenerated(false);
+      } else {
+        setCurrentIdea(newIdea);
+        setIdeas((prev) => [newIdea, ...prev]);
+        setHasGenerated(true);
+      }
     } catch (err: unknown) {
       console.error("Falha ao gerar ideia:", err);
-      const message = err instanceof Error ? err.message : "Não foi possível gerar a ideia. Tente novamente.";
-      setError(message);
+      setError(FRIENDLY_ERROR);
     } finally {
       setIsLoading(false);
     }
@@ -196,8 +202,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
 
     } catch (err: unknown) {
       console.error("Falha ao gerar ideia surpresa:", err);
-      const message = err instanceof Error ? err.message : "Não foi possível gerar a ideia. Tente novamente.";
-      setError(message);
+      setError(FRIENDLY_ERROR);
     } finally {
       setIsLoading(false);
     }
@@ -330,8 +335,8 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
                                   ? "bg-blue-900/30 text-blue-400"
                                   : "bg-blue-50 text-blue-600"
                                 : darkMode
-                                ? "text-slate-300 hover:bg-slate-700"
-                                : "text-gray-700 hover:bg-gray-50"
+                                  ? "text-slate-300 hover:bg-slate-700"
+                                  : "text-gray-700 hover:bg-gray-50"
                             )}
                           >
                             {t.name}
@@ -373,11 +378,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 </div>
               </div>
             </div>
-
-            {error && (
-              <p className="text-center text-red-600 text-sm mt-4">{error}</p>
-            )}
-
+            
             <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
               <button
                 onClick={() => generateIdea()}
@@ -392,8 +393,8 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 {isLoading
                   ? "Gerando..."
                   : hasGenerated
-                  ? "Gerar Outra Ideia"
-                  : "Gerar Ideia"}
+                    ? "Gerar Outra Ideia"
+                    : "Gerar Ideia"}
               </button>
               <button
                 onClick={surpriseMe}
@@ -421,12 +422,23 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
             >
               Resultado
             </h2>
-            {currentIdea ? (
+             {error ? (
+              <div className="animate-fadeIn">
+                <GeneratorErrorCard
+                  error={error}
+                  errorType={
+                    error === INAPPROPRIATE_CONTENT
+                      ? "inappropriate"
+                      : "general"
+                  }
+                />
+              </div>
+            ) : currentIdea ? (
               <IdeaResultCard
                 idea={currentIdea}
                 onToggleFavorite={toggleFavorite}
-                onCopy={() => {}}
-                onShare={() => {}}
+                onCopy={() => { }}
+                onShare={() => { }}
               />
             ) : (
               <SectionContainer
