@@ -4,17 +4,17 @@ import { useTheme } from "@/hooks/useTheme";
 import { AppHeader } from "@/components/Header/AppHeader";
 import { AppFooter } from "@/components/Footer/AppFooter";
 import { cn } from "@/lib/utils";
-import { isAuthenticated } from "@/lib/api";
+//import { isAuthenticated } from "@/lib/api";
 
 export function PrivateLayout() {
   const { darkMode } = useTheme();
   const navigate = useNavigate();
 
-  useEffect(() => {
-    if (!isAuthenticated()) {
-      navigate("/login", { replace: true });
-    }
-  }, [navigate]);
+  // useEffect(() => {
+  //   if (!isAuthenticated()) {
+  //     navigate("/login", { replace: true });
+  //   }
+  // }, [navigate]);
 
   return (
     <div

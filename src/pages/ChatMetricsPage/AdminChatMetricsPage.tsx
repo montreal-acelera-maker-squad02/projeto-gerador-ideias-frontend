@@ -13,7 +13,7 @@ import type {
   ChatFilter,
   Interaction as TypedInteraction,
 } from "@/types/chatMetrics";
-import { SERIES_COLORS } from "@/types/chatMetrics";
+import { SERIES_COLORS, CHAT_FILTER_LABELS } from "@/types/chatMetrics";
 import { formatMs, formatInt, todayLocal } from "@/utils/format";
 import { buildHourlySeries, computeKpis } from "@/utils/chatbot_metrics";
 import ChatMetricsFilters from "@/components/ChatMetricsFilters/ChatMetricsFilters";
@@ -180,7 +180,7 @@ export function AdminChatMetricsPage() {
               darkMode ? "text-slate-500" : "text-gray-400"
             )}
           >
-            Admin • Usage
+            Administrador • Uso por Usuário
           </p>
           <h1 className="text-2xl font-semibold">
             Métricas de uso da Aiko IA para todos os usuários
@@ -222,7 +222,7 @@ export function AdminChatMetricsPage() {
             {!!filteredByTypeForCharts.length && (
               <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <ChatKpiCard
-                  title="Total Interactions"
+                  title="Interações Totais"
                   value={formatInt(summary.totalInteractions)}
                   subtitle={date}
                   icon={MessageSquareText}
@@ -234,13 +234,13 @@ export function AdminChatMetricsPage() {
                   icon={Gauge}
                 />
                 <ChatKpiCard
-                  title="Avg Response Time"
+                  title="Tempo Médio de Resposta"
                   value={formatMs(summary.averageResponseTimeMs)}
                   subtitle={`p50: ${formatMs(p50)} • p95: ${formatMs(p95)}`}
                   icon={Clock}
                 />
                 <ChatKpiCard
-                  title="Avg Tokens/Interaction"
+                  title="Média de Tokens por Interação"
                   value={formatInt(Math.round(avgTokensPerInteraction))}
                   subtitle="Input + Output por interação"
                   icon={Cpu}
@@ -252,7 +252,7 @@ export function AdminChatMetricsPage() {
               <section className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className={cn("rounded-2xl border p-4", theme.cardBase)}>
                   <h3 className="mb-2 text-sm font-medium">
-                    Interactions per Hour
+                    Interações por Hora
                   </h3>
                   <div className="h-64">
                     <InteractionsByHourChart
@@ -266,7 +266,7 @@ export function AdminChatMetricsPage() {
                 </div>
 
                 <div className={cn("rounded-2xl border p-4", theme.cardBase)}>
-                  <h3 className="mb-2 text-sm font-medium">Tokens by Hour</h3>
+                  <h3 className="mb-2 text-sm font-medium">Tokens por Hora</h3>
                   <div className="h-64">
                     <TokensByHourChart
                       data={series}
@@ -286,7 +286,7 @@ export function AdminChatMetricsPage() {
                   )}
                 >
                   <h3 className="mb-2 text-sm font-medium">
-                    Avg Response Time (ms) by Hour
+                    Tempo Médio de Resposta (ms) Por Hora
                   </h3>
                   <div className="h-64">
                     <LatencyByHourChart
@@ -320,7 +320,7 @@ export function AdminChatMetricsPage() {
               <ChatMetricsTable
                 items={tableItems}
                 dark={darkMode}
-                scopeLabel={chatFilter === "ALL" ? "ALL" : chatFilter}
+                scopeLabel={CHAT_FILTER_LABELS[chatFilter]}
                 showUserColumns
               />
             </section>

@@ -3,6 +3,7 @@ import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { formatMs, hhmm } from "@/utils/format";
 import type { ChatFilter } from "@/types/chatMetrics";
+import { CHAT_FILTER_BADGE_LABELS } from "@/types/chatMetrics";
 
 type Row = {
   interactionId: number;
@@ -72,9 +73,9 @@ export default function ChatMetricsTable ({
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b p-4">
-        <h3 className="text-sm font-medium">Interactions ({items.length})</h3>
+        <h3 className="text-sm font-medium">Interações ({items.length})</h3>
         <div className={cn("text-xs", theme.muted)}>
-          Showing: {scopeLabel ?? "—"}
+          Mostrando: {scopeLabel ?? "—"}
         </div>
       </div>
 
@@ -85,15 +86,15 @@ export default function ChatMetricsTable ({
           >
             <tr>
               <th scope="col" className="px-4 py-3">
-                Time
+                Hora
               </th>
               {showUserColumns && (
                 <>
                   <th scope="col" className="px-4 py-3">
-                    User
+                    Usuário
                   </th>
                   <th scope="col" className="px-4 py-3">
-                    Email
+                    E-mail
                   </th>
                 </>
               )}
@@ -103,19 +104,19 @@ export default function ChatMetricsTable ({
                 </th>
               )}
               <th scope="col" className="px-4 py-3">
-                Type
+                Tipo
               </th>
               <th scope="col" className="px-4 py-3">
-                Tokens (in/out/total)
+                Tokens (entrada/saída/total)
               </th>
               <th scope="col" className="px-4 py-3">
-                Response
+                Tempo de resposta
               </th>
               <th scope="col" className="px-4 py-3">
-                Preview
+                Prévia
               </th>
               <th scope="col" className="px-4 py-3">
-                Actions
+                Ações
               </th>
             </tr>
           </thead>
@@ -153,10 +154,10 @@ export default function ChatMetricsTable ({
                     {/* IDs */}
                     {showIds && (
                       <td className="px-4 py-3">
-                        <div className="text-xs">interaction: {it.interactionId}</div>
-                        <div className={cn("text-xs", theme.muted)}>session: {it.sessionId}</div>
+                        <div className="text-xs">interação: {it.interactionId}</div>
+                        <div className={cn("text-xs", theme.muted)}>sessão: {it.sessionId}</div>
                         {it.ideaId != null && (
-                          <div className={cn("text-xs", theme.muted)}>idea: {it.ideaId}</div>
+                          <div className={cn("text-xs", theme.muted)}>ideia: {it.ideaId}</div>
                         )}
                       </td>
                     )}
@@ -175,7 +176,7 @@ export default function ChatMetricsTable ({
                             : "bg-emerald-100/60 text-emerald-700"
                         )}
                       >
-                        {it.chatFilter}
+                        {CHAT_FILTER_BADGE_LABELS[it.chatFilter]}
                       </span>
                     </td>
 
@@ -215,11 +216,11 @@ export default function ChatMetricsTable ({
                       >
                         {isOpen ? (
                           <>
-                            Hide <ChevronUp className="h-3 w-3" />
+                            Ocultar <ChevronUp className="h-3 w-3" />
                           </>
                         ) : (
                           <>
-                            View <ChevronDown className="h-3 w-3" />
+                            Ver <ChevronDown className="h-3 w-3" />
                           </>
                         )}
                       </button>
@@ -236,7 +237,7 @@ export default function ChatMetricsTable ({
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                           <div className={cn("rounded-xl border p-3", theme.cardBase)}>
                             <div className={cn("mb-1 text-xs font-medium", theme.muted)}>
-                              User Message
+                              Mensagem do Usuário
                             </div>
                             <pre
                               className={cn(
@@ -250,7 +251,7 @@ export default function ChatMetricsTable ({
 
                           <div className={cn("rounded-xl border p-3", theme.cardBase)}>
                             <div className={cn("mb-1 text-xs font-medium", theme.muted)}>
-                              Assistant Message
+                              Mensagem da Assistente
                             </div>
                             <pre
                               className={cn(
