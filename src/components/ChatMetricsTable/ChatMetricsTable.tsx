@@ -15,18 +15,25 @@ type Row = {
   userMessage: string;
   assistantMessage: string;
   ideaId?: number | null;
+
+  /** Admin only **/
+  userName?: string | null;
+  userEmail?: string | null;
 };
 
 export type ChatMetricsTableProps = {
   items: Row[];
   dark: boolean;
   scopeLabel?: string; // e.g., "ALL" | "FREE" | "CONTEXT"
+  /** Admin: show username + email columns */
+  showUserColumns?: boolean;
 };
 
 export default function ChatMetricsTable ({
   items,
   dark,
   scopeLabel,
+  showUserColumns = false,
 }: Readonly<ChatMetricsTableProps>) {
   const [expanded, setExpanded] = useState<Set<number>>(() => new Set());
 
@@ -45,7 +52,7 @@ export default function ChatMetricsTable ({
     [dark]
   );
 
-    const toggle = useCallback((id: number) => {
+  const toggle = useCallback((id: number) => {
     setExpanded(prev => {
         const next = new Set(prev);
         if (next.has(id)) {
@@ -55,7 +62,9 @@ export default function ChatMetricsTable ({
         }
         return next;
     });
-    }, []);
+  }, []);
+
+  const totalColumns = 7 + (showUserColumns ? 2 : 0);
 
   return (
     <>
@@ -75,6 +84,16 @@ export default function ChatMetricsTable ({
               <th scope="col" className="px-4 py-3">
                 Time
               </th>
+              {showUserColumns && (
+                <>
+                  <th scope="col" className="px-4 py-3">
+                    User
+                  </th>
+                  <th scope="col" className="px-4 py-3">
+                    Email
+                  </th>
+                </>
+              )}
               <th scope="col" className="px-4 py-3">
                 IDs
               </th>
@@ -105,10 +124,28 @@ export default function ChatMetricsTable ({
               return (
                 <React.Fragment key={it.interactionId}>
                   <tr className={cn("align-top border-t", theme.rowBorder)}>
+                    {/* Time */}
                     <td className={cn("px-4 py-3 font-mono text-xs", theme.textStrong)}>
                       {hhmm(it.timestamp)}
                     </td>
 
+                    {/* User columns - Admin only */}
+                    {showUserColumns && (
+                      <>
+                        <td className="px-4 py-3">
+                          <div className="text-xs font-medium">
+                            {it.userName ?? "—"}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className={cn("text-xs", theme.muted)}>
+                            {it.userEmail ?? "—"}
+                          </div>
+                        </td>
+                      </>
+                    )}
+
+                    {/* IDs */}
                     <td className="px-4 py-3">
                       <div className="text-xs">interaction: {it.interactionId}</div>
                       <div className={cn("text-xs", theme.muted)}>session: {it.sessionId}</div>
@@ -117,6 +154,7 @@ export default function ChatMetricsTable ({
                       )}
                     </td>
 
+                    {/* Type */}
                     <td className="px-4 py-3">
                       <span
                         className={cn(
@@ -134,6 +172,7 @@ export default function ChatMetricsTable ({
                       </span>
                     </td>
 
+                    {/* Tokens */}
                     <td className="px-4 py-3">
                       <div className="text-xs">
                         {it.tokensInput} / {it.tokensOutput} /{" "}
@@ -141,10 +180,12 @@ export default function ChatMetricsTable ({
                       </div>
                     </td>
 
+                    {/* Response time */}
                     <td className="px-4 py-3">
                       <div className="text-xs">{formatMs(it.responseTimeMs)}</div>
                     </td>
 
+                    {/* Preview */}
                     <td className="max-w-[420px] px-4 py-3">
                       <div className="line-clamp-2 text-xs">
                         <span className="font-medium">U:</span> {it.userMessage}
@@ -154,6 +195,7 @@ export default function ChatMetricsTable ({
                       </div>
                     </td>
 
+                    {/* Actions */}
                     <td className="px-4 py-3">
                       <button
                         onClick={() => toggle(it.interactionId)}
@@ -222,7 +264,7 @@ export default function ChatMetricsTable ({
 
             {!items.length && (
               <tr>
-                <td colSpan={7} className={cn("px-4 py-12 text-center", theme.muted)}>
+                <td colSpan={totalColumns} className={cn("px-4 py-12 text-center", theme.muted)}>
                   Nenhuma interação foi encontrada nesse período
                 </td>
               </tr>
