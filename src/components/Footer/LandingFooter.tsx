@@ -1,5 +1,7 @@
 import { AppFooter } from "./AppFooter";
 import githubIcon from '@/assets/githubMark/github-mark.png'
+import creaitorIcon from '@/assets/CriaitorAssets/LOGO FUNDO BRANCO - SEM FUNDO.png';
+
 export function LandingFooter() {
   return (
     <footer className="border-t border-gray-200 bg-background">
@@ -7,7 +9,8 @@ export function LandingFooter() {
         
         {/* Brand e Contexto */}
         <div className="max-w-sm">
-          <h2 className="text-lg font-semibold">Criaitor</h2>
+          <img src={creaitorIcon} alt="Logo do Criaitor" className="mt-3 h-10 w-auto object-contain md:h-12" />
+
           <p className="mt-2 text-sm text-muted-foreground">
             Aplicação web desenvolvida pelo time Acelera Maker da Montreal para geração de ideias criativas com IA local (Ollama).
           </p>
