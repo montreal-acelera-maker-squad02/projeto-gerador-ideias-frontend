@@ -100,7 +100,6 @@ export function UserChatMetricsPage() {
 
   const isError = status === "error";
   const isLoading = status === "loading";
-  const isEmpty = status === "empty";
 
   const theme = useMemo(
     () => ({
@@ -144,7 +143,7 @@ export function UserChatMetricsPage() {
       <div className="mx-auto max-w-7xl px-4 py-8 md:px-8">
         <header className="mb-6">
           <p className={cn("text-sm uppercase tracking-wide", darkMode ? "text-slate-500" : "text-gray-400")}>
-            Usage
+            Uso
           </p>
           <h1 className="text-2xl font-semibold">Minhas métricas de uso da Aiko Ai</h1>
           <p className={cn("mt-2 text-sm md:text-base", theme.muted)}>
@@ -175,17 +174,17 @@ export function UserChatMetricsPage() {
           <>
             {!!filteredForCharts.length && (
               <section className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                <ChatKpiCard title="Total Interactions" value={formatInt(summary.totalInteractions)} subtitle={date} icon={MessageSquareText} />
+                <ChatKpiCard title="Interações Totais" value={formatInt(summary.totalInteractions)} subtitle={date} icon={MessageSquareText} />
                 <ChatKpiCard title="Tokens (Input → Output)" value={`${formatInt(summary.totalTokensInput)} → ${formatInt(summary.totalTokensOutput)}`} subtitle={`Total: ${formatInt(summary.totalTokensInput + summary.totalTokensOutput)}`} icon={Gauge} />
-                <ChatKpiCard title="Avg Response Time" value={formatMs(summary.averageResponseTimeMs)} subtitle={`p50: ${formatMs(p50)} • p95: ${formatMs(p95)}`} icon={Clock} />
-                <ChatKpiCard title="Avg Tokens/Interaction" value={formatInt(Math.round(avgTokensPerInteraction))} subtitle="Input + Output por interação" icon={Cpu} />
+                <ChatKpiCard title="Tempo Médio de Respostas" value={formatMs(summary.averageResponseTimeMs)} subtitle={`p50: ${formatMs(p50)} • p95: ${formatMs(p95)}`} icon={Clock} />
+                <ChatKpiCard title="Média de Tokens por Interação" value={formatInt(Math.round(avgTokensPerInteraction))} subtitle="entrada + saída por interação" icon={Cpu} />
               </section>
             )}
 
             {!!filteredForCharts.length && (
               <section className="mb-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
                 <div className={cn("rounded-2xl border p-4", theme.cardBase)}>
-                  <h3 className="mb-2 text-sm font-medium">Interactions per Hour</h3>
+                  <h3 className="mb-2 text-sm font-medium">Interações por Hora</h3>
                   <div className="h-64">
                     <InteractionsByHourChart 
                       data={series}
@@ -198,7 +197,7 @@ export function UserChatMetricsPage() {
                 </div>
 
                 <div className={cn("rounded-2xl border p-4", theme.cardBase)}>
-                  <h3 className="mb-2 text-sm font-medium">Tokens by Hour</h3>
+                  <h3 className="mb-2 text-sm font-medium">Tokens por Hora</h3>
                   <div className="h-64">
                     <TokensByHourChart
                       data={series}
@@ -212,7 +211,7 @@ export function UserChatMetricsPage() {
                 </div>
 
                 <div className={cn("rounded-2xl border p-4 lg:col-span-2", theme.cardBase)}>
-                  <h3 className="mb-2 text-sm font-medium">Avg Response Time (ms) by Hour</h3>
+                  <h3 className="mb-2 text-sm font-medium">Tempo Médio de Resposta (ms) Por Hora</h3>
                   <div className="h-64">
                     <LatencyByHourChart
                       data={series}
