@@ -12,8 +12,6 @@ export const Navbar: React.FC<NavbarProps> = ({ hideActions = false }) => {
   return (
     <header className="sticky top-0 left-0 z-50 w-full bg-[#F9F9FB] backdrop-blur-md shadow-[0_4px_20px_rgba(0,0,0,0.03)]">
       <div className="mx-auto max-w-7xl px-4 py-3 md:px-10 md:py-4">
-        {/* Small: everything centered on one row (with wrap if needed)
-            Md+: logo left, buttons right */}
         <div className="flex flex-wrap items-center justify-center gap-4 md:flex-nowrap md:justify-between">
           {/* Logo + brand */}
           <button
