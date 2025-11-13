@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Sun, Moon, ChevronDown, LogOut } from "lucide-react";
+import { Sun, Moon, ChevronDown, LogOut, BarChart3 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from '@/hooks/useTheme';
 
@@ -58,6 +58,11 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     else navigate("/login");
   };
 
+  const handleMetricsClick = () => {
+    setOpen(false);
+    navigate("/chatbot-metrics");
+  };
+
   return (
     <div className={cn("relative", className)}>
       <button
@@ -93,6 +98,22 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               : "bg-white border-gray-200"
           )}
         >
+          {/* Metrics */}
+          <button
+            type="button"
+            onClick={handleMetricsClick}
+            className={cn(
+              "w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-all-smooth",
+              darkMode ? "hover:bg-slate-800 text-slate-50" : "hover:bg-gray-100 text-gray-700"
+            )}
+            role="menuitem"
+          >
+            <BarChart3 className="w-4 h-4" />
+            <span>Métricas</span>
+          </button>
+
+          <div className={cn("my-1 h-px", darkMode ? "bg-slate-700" : "bg-gray-200")} />
+
           {/* Theme toggle */}
           <button
             type="button"

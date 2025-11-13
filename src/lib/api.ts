@@ -109,6 +109,8 @@ export async function apiFetch(input: string, init?: RequestInit): Promise<Respo
   
   if (token) {
     headers.set('Authorization', `Bearer ${token}`)
+  } else {
+    console.warn('[apiFetch] No token found for request:', input)
   }
   
   if (!headers.has('Accept')) {
@@ -120,7 +122,7 @@ export async function apiFetch(input: string, init?: RequestInit): Promise<Respo
   }
 
   let response = await fetch(input, { ...init, headers, credentials: 'include' })
-
+  
   if ((response.status === 401 || response.status === 403) && token) {
     const newToken = await refreshAccessToken()
     
@@ -140,10 +142,12 @@ export async function apiFetch(input: string, init?: RequestInit): Promise<Respo
         window.location.href = '/login'
       }
     }
-  } else if ((response.status === 401 || response.status === 403) && !token) {
+  } else if (response.status === 401 && !token) {
     if (window.location.pathname !== '/login' && window.location.pathname !== '/register') {
       window.location.href = '/login'
     }
+  } else if (response.status === 403 && !token) {
+    console.error('[apiFetch] 403 Forbidden for:', input, 'No token present')
   }
 
   return response

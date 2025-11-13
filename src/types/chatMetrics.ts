@@ -3,7 +3,7 @@ export type ChatFilter = "ALL" | "FREE" | "CONTEXT";
 
 export type Interaction = {
   interactionId: number;
-  timestamp: string; // ISO
+  timestamp: string;
   sessionId: number;
   chatType: ChatType;
   tokensInput: number;
@@ -12,6 +12,13 @@ export type Interaction = {
   userMessage: string;
   assistantMessage: string;
   ideaId?: number | null;
+};
+
+export type AdminInteraction = Interaction & {
+  userId: number;
+  userName: string;
+  userEmail: string;
+  userIp?: string;
 };
 
 export type DailyMetrics = {

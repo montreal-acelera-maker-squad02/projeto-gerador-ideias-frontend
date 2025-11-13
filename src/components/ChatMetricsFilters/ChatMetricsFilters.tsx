@@ -1,46 +1,32 @@
 import { cn } from "@/lib/utils";
-import { SlidersHorizontal, Cpu } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import type { ChatFilter } from "@/types/chatMetrics";
 
-export type MockMode = "ON" | "EMPTY" | "ERROR" | "LOADING";
-
 export type ChatMetricsFiltersProps = {
-  startDate: string;
-  endDate: string;
-  onStartDateChange: (v: string) => void;
-  onEndDateChange: (v: string) => void;
+  date: string;
+  onDateChange: (v: string) => void;
   chatFilter: ChatFilter;
   onChatFilterChange: (v: ChatFilter) => void;
   compare: boolean;
   onToggleCompare: () => void;
-  mockMode: MockMode;
-  onCycleMock: () => void;
   darkMode: boolean;
-  /** Admin Search Bar (e.g. username / email) */
   query?: string;
   onQueryChange?: (v: string) => void;
   queryPlaceholder?: string;
 };
 
 export default function ChatMetricsFilters({
-  startDate,
-  endDate,
-  onStartDateChange,
-  onEndDateChange,
+  date,
+  onDateChange,
   chatFilter,
   onChatFilterChange,
   compare,
   onToggleCompare,
-  mockMode,
-  onCycleMock,
   darkMode,
   query,
   queryPlaceholder,
   onQueryChange,
 }: Readonly<ChatMetricsFiltersProps>) {
-  const mockLabel = `Mock: ${mockMode}`;
-  const isError = mockMode === "ERROR";
-  const isLoading = mockMode === "LOADING";
 
   const baseCard = darkMode
     ? "border-slate-700 bg-slate-900"
@@ -51,8 +37,6 @@ export default function ChatMetricsFilters({
 
   return (
     <div className="flex flex-wrap items-center gap-2">
-      {/* Período */}
-      <span className="basis-full h-0 p-0 m-0" aria-hidden="true" />
       <label
         className={cn(
           "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm w-fit",
@@ -61,28 +45,15 @@ export default function ChatMetricsFilters({
       >
         <input
           type="date"
-          aria-label="Data inicial"
+          aria-label="Data"
           className={cn(
             "bg-transparent outline-none",
             darkMode ? "text-slate-50" : "text-gray-900"
           )}
-          value={startDate}
-          onChange={(e) => onStartDateChange(e.target.value)}
-        />
-        <span className={darkMode ? "text-slate-500" : "text-gray-400"}>—</span>
-        <input
-          type="date"
-          aria-label="Data final"
-          className={cn(
-            "bg-transparent outline-none",
-            darkMode ? "text-slate-50" : "text-gray-900"
-          )}
-          value={endDate}
-          min={startDate}
-          onChange={(e) => onEndDateChange(e.target.value)}
+          value={date}
+          onChange={(e) => onDateChange(e.target.value)}
         />
       </label>
-      <span className="basis-full h-0 p-0 m-0" aria-hidden="true" />
 
       {/* Segmented control */}
       <div
@@ -169,23 +140,6 @@ export default function ChatMetricsFilters({
           />
         </div>
       )}
-
-      {/* Mock modes */}
-      <button
-        onClick={onCycleMock}
-        aria-label="Alternar modo de mock"
-        className={cn(
-          "inline-flex items-center gap-2 rounded-xl px-3 py-2 text-sm border",
-          isError
-            ? "border-red-300 bg-red-50 text-red-700"
-            : isLoading
-            ? cn(baseCard, darkMode ? "text-slate-100" : "text-gray-900")
-            : cn(baseCard, hoverCard)
-        )}
-        title="Cycle mock mode"
-      >
-        <Cpu className="h-4 w-4" /> {mockLabel}
-      </button>
     </div>
   );
 }

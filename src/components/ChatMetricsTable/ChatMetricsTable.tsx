@@ -27,6 +27,8 @@ export type ChatMetricsTableProps = {
   scopeLabel?: string; // e.g., "ALL" | "FREE" | "CONTEXT"
   /** Admin: show username + email columns */
   showUserColumns?: boolean;
+  /** Show IDs column (interaction, session, idea) */
+  showIds?: boolean;
 };
 
 export default function ChatMetricsTable ({
@@ -34,6 +36,7 @@ export default function ChatMetricsTable ({
   dark,
   scopeLabel,
   showUserColumns = false,
+  showIds = true,
 }: Readonly<ChatMetricsTableProps>) {
   const [expanded, setExpanded] = useState<Set<number>>(() => new Set());
 
@@ -64,7 +67,7 @@ export default function ChatMetricsTable ({
     });
   }, []);
 
-  const totalColumns = 7 + (showUserColumns ? 2 : 0);
+  const totalColumns = 6 + (showUserColumns ? 2 : 0) + (showIds ? 1 : 0);
 
   return (
     <>
@@ -94,9 +97,11 @@ export default function ChatMetricsTable ({
                   </th>
                 </>
               )}
-              <th scope="col" className="px-4 py-3">
-                IDs
-              </th>
+              {showIds && (
+                <th scope="col" className="px-4 py-3">
+                  IDs
+                </th>
+              )}
               <th scope="col" className="px-4 py-3">
                 Type
               </th>
@@ -146,13 +151,15 @@ export default function ChatMetricsTable ({
                     )}
 
                     {/* IDs */}
-                    <td className="px-4 py-3">
-                      <div className="text-xs">interaction: {it.interactionId}</div>
-                      <div className={cn("text-xs", theme.muted)}>session: {it.sessionId}</div>
-                      {it.ideaId != null && (
-                        <div className={cn("text-xs", theme.muted)}>idea: {it.ideaId}</div>
-                      )}
-                    </td>
+                    {showIds && (
+                      <td className="px-4 py-3">
+                        <div className="text-xs">interaction: {it.interactionId}</div>
+                        <div className={cn("text-xs", theme.muted)}>session: {it.sessionId}</div>
+                        {it.ideaId != null && (
+                          <div className={cn("text-xs", theme.muted)}>idea: {it.ideaId}</div>
+                        )}
+                      </td>
+                    )}
 
                     {/* Type */}
                     <td className="px-4 py-3">
@@ -223,7 +230,7 @@ export default function ChatMetricsTable ({
                     <tr className={cn("border-t", theme.rowBorder)}>
                       <td
                         id={detailsId}
-                        colSpan={7}
+                        colSpan={totalColumns}
                         className={cn("p-4", theme.detailsBg)}
                       >
                         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
