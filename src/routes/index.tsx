@@ -21,7 +21,6 @@ const AppRoutes: React.FC = () => {
                     <Route path="/" element={<LandingPage />} />
                     <Route path="/login" element={<LoginPage />} />
                     <Route path="/register" element={<RegisterPage />} />                
-                    <Route path="/chatbot-metrics" element={<ChatMetricsGate />} />
                 </Route>
 
                 {/* Private Routes */}
@@ -30,6 +29,7 @@ const AppRoutes: React.FC = () => {
                     <Route path="/history" element={<HistoryPage />} />
                     <Route path="/favorites" element={<FavoritesPage />} />
                     <Route path="/dashboard" element={<DashboardPage />} />
+                    <Route path="/chatbot-metrics" element={<ChatMetricsGate />} />
                 </Route>
 
             </Routes>
