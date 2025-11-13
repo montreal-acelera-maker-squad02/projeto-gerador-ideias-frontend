@@ -14,7 +14,7 @@ interface FavoriteCardProps
     | "showDivider"
     | "headerRight"
   > {
-  onToggleFavorite?: (id: string) => void;
+  onToggleFavorite?: (id: string) => Promise<void> | void;
 }
 
 export default function FavoriteCard({
@@ -27,29 +27,25 @@ export default function FavoriteCard({
 
   const { darkMode } = useTheme();
 
+  // Evita atualizar estado após desmontar
   useEffect(() => {
     return () => {
       isMounted.current = false;
     };
   }, []);
 
-  const handleClick = (e: React.MouseEvent) => {
+  const handleClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (loading) return;
+
     setLoading(true);
 
     try {
-      // ✅ Força execução assíncrona, mas sem retornar Promise
-      const maybePromise = onToggleFavorite?.(idea.id) as unknown;
-      if (maybePromise instanceof Promise) {
-        maybePromise.finally(() => {
-          if (isMounted.current) setLoading(false);
-        });
-      } else if (isMounted.current) {
-        setLoading(false);
-      }
+      // 🔥 Sempre trata como promise async (mais seguro)
+      await onToggleFavorite?.(idea.id);
     } catch (err) {
       console.error("Erro ao desfavoritar:", err);
+    } finally {
       if (isMounted.current) setLoading(false);
     }
   };

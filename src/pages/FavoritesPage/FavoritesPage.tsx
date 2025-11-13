@@ -1,25 +1,10 @@
 import { useEffect, useState, useCallback } from "react";
 import SectionContainer from "@/components/SectionContainer/SectionContainer";
 import FavoriteCard from "@/components/IdeiaCard/FavoriteCard";
-import { ideaService } from "@/services/ideaService";
+import { favoriteService } from "@/services/favoriteService";
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
-
-// 🔹 Função externa para evitar nesting excessivo dentro do componente
-async function loadFavoritesData(
-  setIdeas: React.Dispatch<React.SetStateAction<Idea[]>>,
-  setLoading: React.Dispatch<React.SetStateAction<boolean>>
-) {
-  try {
-    const favorites = await ideaService.getFavorites();
-    setIdeas(favorites);
-  } catch (err) {
-    console.error("Erro ao buscar favoritos:", err);
-  } finally {
-    setLoading(false);
-  }
-}
 
 export default function FavoritesPage() {
   const [ideas, setIdeas] = useState<Idea[]>([]);
@@ -27,37 +12,34 @@ export default function FavoritesPage() {
 
   const { darkMode } = useTheme();
 
-  // ✅ Carrega os favoritos na montagem do componente
+  // 🔥 Carrega favoritos ao montar
   useEffect(() => {
-    loadFavoritesData(setIdeas, setLoading);
+    (async () => {
+      const data = await favoriteService.getFavorites();
+      setIdeas(data);
+      setLoading(false);
+    })();
   }, []);
 
-  // ✅ Refatorado para reduzir aninhamento (substituído .then/.catch por async/await)
+  // 🔥 Desfavoritar (remove do backend + remove da lista)
   const handleUnfavorite = useCallback(async (id: string) => {
     try {
-      await ideaService.toggleFavorite(id, false);
-      setIdeas((prev) => prev.filter((idea) => idea.id !== id));
+      await favoriteService.removeFavorite(id);
+      setIdeas(prev => prev.filter(idea => idea.id !== id));
     } catch (err) {
       console.error("Erro ao desfavoritar:", err);
     }
   }, []);
 
-  // ✅ Separado para clareza e evitar ternários complexos
+  // UI Helpers
   const renderLoading = () => (
     <SectionContainer
       className={cn(
         "rounded-2xl p-12 text-center animate-fadeIn border",
-        darkMode
-          ? "bg-slate-900 border-slate-800"
-          : "bg-linear-to-br from-gray-50 to-pink-50/30 border-gray-200"
+        darkMode ? "bg-slate-900 border-slate-800" : "bg-gray-50 border-gray-200"
       )}
     >
-      <p
-        className={cn(
-          "font-light",
-          darkMode ? "text-slate-200" : "text-gray-600"
-        )}
-      >
+      <p className={cn("font-light", darkMode ? "text-slate-200" : "text-gray-600")}>
         Carregando favoritos...
       </p>
     </SectionContainer>
@@ -67,17 +49,10 @@ export default function FavoritesPage() {
     <SectionContainer
       className={cn(
         "rounded-2xl p-12 text-center animate-fadeIn border",
-        darkMode
-          ? "bg-slate-900 border-slate-800"
-          : "bg-linear-to-br from-gray-50 to-pink-50/30 border-gray-200"
+        darkMode ? "bg-slate-900 border-slate-800" : "bg-gray-50 border-gray-200"
       )}
     >
-      <p
-        className={cn(
-          "font-light",
-          darkMode ? "text-slate-200" : "text-gray-600"
-        )}
-      >
+      <p className={cn("font-light", darkMode ? "text-slate-200" : "text-gray-600")}>
         Nenhuma ideia favorita ainda
       </p>
     </SectionContainer>
@@ -95,7 +70,6 @@ export default function FavoritesPage() {
     </div>
   );
 
-  // ✅ Função simples e sem nesting desnecessário
   const renderContent = () => {
     if (loading) return renderLoading();
     if (ideas.length === 0) return renderEmpty();
@@ -104,10 +78,10 @@ export default function FavoritesPage() {
 
   return (
     <div className="max-w-7xl mx-auto px-8 py-12 relative z-10 animate-fadeInUp">
-      <h2 className={cn("text-3xl font-light mb-8", 
-          darkMode 
-            ? "text-white" 
-            : "text-gray-900"
+      <h2
+        className={cn(
+          "text-3xl font-light mb-8",
+          darkMode ? "text-white" : "text-gray-900"
         )}
       >
         Favoritos
