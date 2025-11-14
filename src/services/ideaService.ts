@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api"
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard"
 import { emitHistoryRefreshRequest } from "@/events/historyEvents";
+import { pushIdeaToCache } from "@/hooks/useIdeas";
 
 type IdeaApiResponse = {
   id: string | number;
@@ -20,6 +21,7 @@ function mapResponseToIdea(response: IdeaApiResponse): Idea {
     isFavorite: false,
     responseTime: response.executionTimeMs,
     context: response.context || "",
+    author: response.userName?.trim() || response.author?.trim() || undefined,
   };
   return newIdea;
 }
@@ -54,10 +56,12 @@ export const ideaService = {
     }
 
     const responseData = await response.json();
+    const newIdea = mapResponseToIdea(responseData);
 
-    emitHistoryRefreshRequest();
+    pushIdeaToCache(newIdea)
+    emitHistoryRefreshRequest({ idea: newIdea });
 
-    return mapResponseToIdea(responseData);
+    return newIdea;
   },
 
   /**
@@ -74,10 +78,12 @@ export const ideaService = {
     }
 
     const responseData = await response.json();
+    const newIdea = mapResponseToIdea(responseData);
 
-    emitHistoryRefreshRequest();
+    pushIdeaToCache(newIdea)
+    emitHistoryRefreshRequest({ idea: newIdea });
 
-    return mapResponseToIdea(responseData);
+    return newIdea;
   },
 
   async toggleFavorite(ideaId: string, isFavorite: boolean): Promise<void> {

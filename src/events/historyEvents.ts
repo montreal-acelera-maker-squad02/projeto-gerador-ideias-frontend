@@ -1,16 +1,27 @@
+import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
+
 const HISTORY_REFRESH_EVENT = 'history:refresh'
 
-type HistoryRefreshEventHandler = () => void
+export type HistoryRefreshEventDetail = {
+  idea?: Idea
+}
 
-export function emitHistoryRefreshRequest() {
+type HistoryRefreshEventHandler = (detail: HistoryRefreshEventDetail) => void
+
+export function emitHistoryRefreshRequest(detail: HistoryRefreshEventDetail = {}) {
   if (typeof window === 'undefined') return
-  window.dispatchEvent(new Event(HISTORY_REFRESH_EVENT))
+  const event = new CustomEvent(HISTORY_REFRESH_EVENT, { detail })
+  window.dispatchEvent(event)
 }
 
 export function subscribeHistoryRefresh(handler: HistoryRefreshEventHandler) {
   if (typeof window === 'undefined') {
     return () => {}
   }
-  window.addEventListener(HISTORY_REFRESH_EVENT, handler)
-  return () => window.removeEventListener(HISTORY_REFRESH_EVENT, handler)
+  const listener = (event: Event) => {
+    const detail = (event as CustomEvent<HistoryRefreshEventDetail>).detail
+    handler(detail ?? {})
+  }
+  window.addEventListener(HISTORY_REFRESH_EVENT, listener)
+  return () => window.removeEventListener(HISTORY_REFRESH_EVENT, listener)
 }

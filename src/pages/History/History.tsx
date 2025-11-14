@@ -5,7 +5,7 @@ import { useIdeas } from '@/hooks/useIdeas'
 import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
 import { ideaService } from '@/services/ideaService'
-import { subscribeHistoryRefresh } from '@/events/historyEvents'
+import { subscribeHistoryRefresh, type HistoryRefreshEventDetail } from '@/events/historyEvents'
 import { fetchFavoriteIds, updateFavoriteCache } from './favoritesCache'
 import CommunityIdeaCard, { type CommunityIdea } from '@/components/IdeiaCard/CommunityIdeaCard'
 import { themeService, type Theme } from '@/services/themeService'
@@ -156,7 +156,10 @@ export default function HistoryPage() {
   }, [refetch])
 
   useEffect(() => {
-    const unsubscribe = subscribeHistoryRefresh(() => {
+    const unsubscribe = subscribeHistoryRefresh((detail) => {
+      if (detail.idea) {
+        setIdeas((current) => mergeIdeas([detail.idea], current))
+      }
       refetch({ ignoreCache: true })
     })
     return unsubscribe
@@ -230,7 +233,7 @@ export default function HistoryPage() {
     )
   } else {
     cardsContent = (
-      <div className="grid gap-6 sm:grid-cols-2 justify-items-center">
+      <div className="grid gap-6 justify-items-center sm:grid-cols-[repeat(2,minmax(0,640px))]">
         {paginated.map((idea) => (
           <CommunityIdeaCard key={idea.id} idea={toCommunityIdea(idea)} onToggleFavorite={handleToggleFavorite} />
         ))}

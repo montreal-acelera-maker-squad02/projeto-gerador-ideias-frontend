@@ -53,7 +53,7 @@ export default function CommunityIdeaCard({
   return (
     <article
       className={cn(
-        "transition-all-smooth cursor-pointer rounded-2xl p-6 flex flex-col gap-6 w-full max-w-[560px]",
+        "transition-all-smooth cursor-pointer rounded-2xl p-6 flex flex-col gap-6 w-full max-w-[640px]",
         surface,
         className
       )}

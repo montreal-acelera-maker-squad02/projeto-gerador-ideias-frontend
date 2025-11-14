@@ -91,6 +91,20 @@ export function useIdeas(filters: IdeasFilters) {
   return { data, loading, error, refetch }
 }
 
+export function pushIdeaToCache(idea: Idea, query: string = CACHE_KEY_EMPTY) {
+  ensureCacheEntry(query)
+  const entry = ideasCache.get(query)!
+  const deduped = entry.data.filter((i) => i.id !== idea.id)
+  entry.data = [idea, ...deduped]
+  entry.fetchedAt = Date.now()
+}
+
+function ensureCacheEntry(query: string) {
+  if (!ideasCache.has(query)) {
+    ideasCache.set(query, { data: [], fetchedAt: 0 })
+  }
+}
+
 export async function prefetchIdeas(filters: IdeasFilters = {}) {
   await prefetchIdeasInternal({ query: buildQuery(filters) }).catch((error) => {
     if (error?.name === 'AbortError') return
