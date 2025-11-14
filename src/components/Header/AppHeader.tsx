@@ -11,9 +11,10 @@ export type NavItem = Readonly<{ to: string; label: string; exact?: boolean }>;
 const DEFAULT_NAV: NavItem[] = [
   { to: "/generator", label: "Início" },
   { to: "/my-ideas", label: "Minhas Ideias"},
-  { to: "/history", label: "Comunidade" },
-  { to: "/favorites", label: "Favoritos" },
-  { to: "/dashboard", label: "Dashboard" },
+  { to: "/community", label: "Comunidade" },
+  { to: "/favorites", label: "Ideias Favoritas" },
+  { to: "/dashboard", label: "Métricas de Ideias Geradas" },
+  { to: "/chatbot-metrics", label: "Métricas da Aiko IA"}
 ];
 
 export type AppHeaderProps = Readonly<{
@@ -37,6 +38,14 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
     ? "bg-slate-900/95 border-slate-800"
     : "bg-white/95 border-gray-200";
 
+  const PRIMARY_NAV_PATHS = new Set([
+    "/generator",
+    "/my-ideas",
+    "/community",
+  ]);
+
+  const primaryNav = nav.filter((item) => PRIMARY_NAV_PATHS.has(item.to));
+
   return (
     <header
       className={cn(
@@ -53,7 +62,7 @@ export const AppHeader: React.FC<AppHeaderProps> = ({
         <div className="flex items-center gap-8">
           {/* Primary nav */}
           <nav className="hidden md:flex gap-8">
-            {nav.map((item) => (
+            {primaryNav.map((item) => (
               <NavLink
                 key={item.to}
                 to={item.to}

@@ -27,7 +27,7 @@ const AppRoutes: React.FC = () => {
                 {/* Private Routes */}
                 <Route element={<PrivateLayout />}>
                     <Route path="/generator" element={<GeneratorPage />} />
-                    <Route path="/history" element={<HistoryPage />} />
+                    <Route path="/community" element={<HistoryPage />} />
                     <Route path="/favorites" element={<FavoritesPage />} />
                     <Route path="/dashboard" element={<DashboardPage />} />
                     <Route path="/my-ideas" element={<MyIdeasPage />} />
