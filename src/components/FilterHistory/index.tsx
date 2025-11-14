@@ -4,16 +4,17 @@ import { cn } from "@/lib/utils";
 import { useTheme } from "@/hooks/useTheme";
 
 
-type Option = { label: string; value: string }
+export type FilterHistoryOption = { label: string; value: string }
+type Option = FilterHistoryOption
 
 const FALLBACK_CATEGORIES: Option[] = [
   { label: 'Todas', value: '' },
   { label: 'Tecnologia', value: 'tecnologia' },
-  { label: 'Educação', value: 'educacao' },
+  { label: 'Educacao', value: 'educacao' },
   { label: 'Marketing', value: 'marketing' },
   { label: 'Viagem', value: 'viagem' },
-  { label: 'Saúde', value: 'saude' },
-  { label: 'Negócio', value: 'negocio' },
+  { label: 'Saude', value: 'saude' },
+  { label: 'Negocio', value: 'negocio' },
 ]
 
 export type FilterHistoryProps = {
@@ -23,6 +24,7 @@ export type FilterHistoryProps = {
   onChange?: (next: { category?: string; startDate?: string; endDate?: string }) => void
   onClear?: () => void
   className?: string
+  categories?: FilterHistoryOption[]
 }
 
 export default function FilterHistory({
@@ -32,6 +34,7 @@ export default function FilterHistory({
   onChange,
   onClear,
   className = '',
+  categories: categoriesProp,
 }: FilterHistoryProps) {
   const { darkMode: ctxDark } = useTheme();
 
@@ -41,13 +44,17 @@ export default function FilterHistory({
   const startId = useId()
   const endId = useId()
 
-  const [categories, setCategories] = useState<Option[]>(FALLBACK_CATEGORIES)
+  const [categories, setCategories] = useState<Option[]>(categoriesProp ?? FALLBACK_CATEGORIES)
   const [internalCategory, setInternalCategory] = useState<string>('')
   const [internalStart, setInternalStart] = useState<string>('')
   const [internalEnd, setInternalEnd] = useState<string>('')
 
   // 🔄 Carrega temas do backend
   useEffect(() => {
+    if (categoriesProp) {
+      setCategories(categoriesProp)
+      return
+    }
     if (import.meta.env.MODE === 'test') {
       setCategories(FALLBACK_CATEGORIES)
       return
@@ -73,7 +80,7 @@ export default function FilterHistory({
     return () => {
       active = false
     }
-  }, [])
+  }, [categoriesProp])
 
   // Sincroniza quando componente é usado de forma controlada
   useEffect(() => {
@@ -199,4 +206,6 @@ function FilterIcon({ className = "" }: { className?: string }) {
     </svg>
   )
 }
+
+
 

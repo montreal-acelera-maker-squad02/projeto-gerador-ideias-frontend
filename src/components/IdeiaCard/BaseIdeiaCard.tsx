@@ -17,6 +17,9 @@ export type Idea = {
   timestamp: Date;
   isFavorite: boolean;
   responseTime?: number;
+  author?: string;
+  tokens?: number;
+  modelUsed?: string;
 };
 
 export type Density = "comfortable" | "compact";

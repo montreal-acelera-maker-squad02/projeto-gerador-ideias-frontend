@@ -3,7 +3,6 @@ import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
 import FilterHistory from "@/components/FilterHistory";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
-import { THEMES } from "@/constants/themes";
 import MyIdeaCard from "@/components/IdeiaCard/MyIdeaCard";
 
 
@@ -15,29 +14,7 @@ const PAGE_SIZE = 5;
  * - Uses THEMES so filters actually work
  * - 12 ideas for pagination
  */
-function buildMockIdeas(): Idea[] {
-  const now = Date.now();
-  const baseThemes = THEMES.length > 0 ? THEMES : [{ label: "Geral", value: "" }];
 
-  const mocks: Idea[] = [];
-
-  for (let i = 0; i < 12; i++) {
-    const theme = baseThemes[i % baseThemes.length];
-
-    mocks.push({
-      id: `mock-${i + 1}`,
-      content: `Ideia de exemplo #${i + 1} para o tema "${theme.label}".`,
-      context:
-        "Este é apenas um texto de exemplo para visualizar o layout da página de ideias.",
-      theme: theme.value,
-      isFavorite: i % 3 === 0,
-      timestamp: new Date(now - i * 3_600_000), // espaçado de 1h
-      responseTime: 800 + i * 40,
-    });
-  }
-
-  return mocks;
-}
 
 export default function MyIdeasPage() {
   const { darkMode } = useTheme();
@@ -55,7 +32,7 @@ export default function MyIdeasPage() {
   })
 
   const [page, setPage] = useState<number>(1);
-  const [ideas, setIdeas] = useState<Idea[]>(() => buildMockIdeas());
+  const [ideas, setIdeas] = useState<Idea[]>(() => []);
   const ideasLoading = false;
 
   useMemo(() => {

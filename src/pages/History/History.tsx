@@ -1,21 +1,26 @@
-﻿import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import MyIdeaCard from '@/components/IdeiaCard/MyIdeaCard'
-import FilterHistory from '@/components/FilterHistory'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+import FilterHistory, { type FilterHistoryOption } from '@/components/FilterHistory'
 import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
 import { useIdeas } from '@/hooks/useIdeas'
-import { THEMES } from '@/constants/themes'
 import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
 import { ideaService } from '@/services/ideaService'
-import { HISTORY_CACHE_KEY } from '@/constants/storageKeys'
 import { subscribeHistoryRefresh } from '@/events/historyEvents'
-import {
-  fetchFavoriteIds,
-  updateFavoriteCache,
-} from './favoritesCache'
+import { fetchFavoriteIds, updateFavoriteCache } from './favoritesCache'
+import CommunityIdeaCard, { type CommunityIdea } from '@/components/IdeiaCard/CommunityIdeaCard'
+import { themeService, type Theme } from '@/services/themeService'
 
 const HISTORY_POLL_INTERVAL = Number(import.meta.env.VITE_HISTORY_POLL_INTERVAL ?? 20_000)
-
+const HISTORY_CACHE_KEY = 'history_cached_ideas'
+const FALLBACK_THEME_OPTIONS: FilterHistoryOption[] = [
+  { label: 'Todas', value: '' },
+  { label: 'Tecnologia', value: 'tecnologia' },
+  { label: 'Educacao', value: 'educacao' },
+  { label: 'Marketing', value: 'marketing' },
+  { label: 'Viagem', value: 'viagem' },
+  { label: 'Saude', value: 'saude' },
+  { label: 'Negocio', value: 'negocio' },
+]
 
 export default function HistoryPage() {
   const [filters, setFilters] = useState<{ category: string; startDate: string; endDate: string }>({
@@ -24,8 +29,9 @@ export default function HistoryPage() {
     endDate: '',
   })
   const [page, setPage] = useState<number>(1)
-  const pageSize = 5
+  const pageSize = 6
 
+  const [themeOptions, setThemeOptions] = useState<FilterHistoryOption[]>(FALLBACK_THEME_OPTIONS)
   const initialIdeas = useMemo(() => {
     if (typeof window === 'undefined') return []
     try {
@@ -37,14 +43,60 @@ export default function HistoryPage() {
         timestamp: new Date(idea.timestamp),
       }))
     } catch (error) {
-      console.warn('Falha ao carregar cache do histï¿½rico', error)
+      console.warn('Falha ao carregar cache do historico', error)
       return []
     }
   }, [])
-
   const [ideas, setIdeas] = useState<Idea[]>(initialIdeas)
   const { data: ideasData, loading: ideasLoading, refetch } = useIdeas(filters)
   const { darkMode } = useTheme()
+
+  const handleFilterChange = useCallback((next: { category?: string; startDate?: string; endDate?: string }) => {
+    setFilters({
+      category: next.category ?? '',
+      startDate: next.startDate ?? '',
+      endDate: next.endDate ?? '',
+    })
+  }, [])
+
+  const handleFilterClear = useCallback(() => {
+    setFilters({
+      category: '',
+      startDate: '',
+      endDate: '',
+    })
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function loadThemes() {
+      if (import.meta.env.MODE === 'test') {
+        setThemeOptions(FALLBACK_THEME_OPTIONS)
+        return
+      }
+      try {
+        const remoteThemes = await themeService.getAll()
+        if (cancelled) return
+        if (Array.isArray(remoteThemes) && remoteThemes.length > 0) {
+          const normalized = buildThemeOptions(remoteThemes)
+          setThemeOptions([{ label: 'Todas', value: '' }, ...normalized])
+        } else {
+          setThemeOptions(FALLBACK_THEME_OPTIONS)
+        }
+      } catch (error) {
+        console.error('Erro ao carregar temas:', error)
+        if (!cancelled) {
+          setThemeOptions(FALLBACK_THEME_OPTIONS)
+        }
+      }
+    }
+
+    loadThemes()
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   useEffect(() => {
     if (!Array.isArray(ideasData)) return
@@ -104,15 +156,24 @@ export default function HistoryPage() {
   }, [refetch])
 
   useEffect(() => {
-    refetch({ ignoreCache: true, silent: initialIdeas.length > 0 })
-  }, [initialIdeas.length, refetch])
-
-  useEffect(() => {
     const unsubscribe = subscribeHistoryRefresh(() => {
       refetch({ ignoreCache: true })
     })
     return unsubscribe
   }, [refetch])
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      const serializable = ideas.map((idea) => ({
+        ...idea,
+        timestamp: idea.timestamp instanceof Date ? idea.timestamp.toISOString() : idea.timestamp,
+      }))
+      window.localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(serializable))
+    } catch (error) {
+      console.warn('Falha ao salvar cache do historico', error)
+    }
+  }, [ideas])
 
   const handleToggleFavorite = useCallback(async (id: string) => {
     let optimisticValue: boolean | null = null
@@ -137,18 +198,13 @@ export default function HistoryPage() {
     }
   }, [])
 
-  const handleDelete = useCallback((id: string) => {
-    setIdeas((prev) => prev.filter((i) => i.id !== id))
-  }, [])
-
-  const filtered = ideas.filter((i) => {
+  const filtered = ideas.filter((idea) => {
     const byCat =
       !filters.category ||
-      (typeof i.theme === 'string' && i.theme.toLowerCase() === filters.category.toLowerCase())
-    const ts = new Date(i.timestamp).getTime()
+      (typeof idea.theme === 'string' && idea.theme.toLowerCase() === filters.category.toLowerCase())
+    const ts = new Date(idea.timestamp).getTime()
     const startOk = !filters.startDate || ts >= new Date(`${filters.startDate}T00:00:00`).getTime()
-    const endOk =
-      !filters.endDate || ts <= new Date(`${filters.endDate}T23:59:59.999`).getTime()
+    const endOk = !filters.endDate || ts <= new Date(`${filters.endDate}T23:59:59.999`).getTime()
     return byCat && startOk && endOk
   })
 
@@ -157,36 +213,30 @@ export default function HistoryPage() {
   const currentPage = Math.min(page, totalPages)
   const start = (currentPage - 1) * pageSize
   const paginated = filtered.slice(start, start + pageSize)
+  const hasIdeas = filtered.length > 0
 
-  const contentClass = cn(
+  const loadingClass = cn(
     'rounded-lg border p-6 text-sm h-32 flex items-center justify-center',
     darkMode ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-gray-200 text-gray-600'
   )
 
-  let listContent: ReactNode = paginated.map((idea) => (
-    <MyIdeaCard key={idea.id} idea={idea} onToggleFavorite={handleToggleFavorite} onDelete={handleDelete} />
-  ))
+  let cardsContent: ReactNode
 
   if (ideasLoading) {
-    listContent = <div className={contentClass}>Carregando ideias...</div>
-  } else if (filtered.length === 0) {
-    listContent = <div className={contentClass}>Nenhuma ideia encontrada.</div>
+    cardsContent = <div className={loadingClass}>Carregando ideias da comunidade...</div>
+  } else if (!hasIdeas) {
+    cardsContent = (
+      <div className={loadingClass}>Nenhuma ideia encontrada para os filtros selecionados.</div>
+    )
+  } else {
+    cardsContent = (
+      <div className="grid gap-6 sm:grid-cols-2 justify-items-center">
+        {paginated.map((idea) => (
+          <CommunityIdeaCard key={idea.id} idea={toCommunityIdea(idea)} onToggleFavorite={handleToggleFavorite} />
+        ))}
+      </div>
+    )
   }
-
-  const hasIdeas = filtered.length > 0
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    try {
-      const serializable = ideas.map((idea) => ({
-        ...idea,
-        timestamp: idea.timestamp instanceof Date ? idea.timestamp.toISOString() : idea.timestamp,
-      }))
-      window.localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(serializable))
-    } catch (error) {
-      console.warn('Falha ao salvar cache do histï¿½rico', error)
-    }
-  }, [ideas])
 
   return (
     <div
@@ -198,33 +248,34 @@ export default function HistoryPage() {
       <div className="grid gap-6 md:grid-cols-[300px_1fr]">
         <div>
           <FilterHistory
-            fixed={false}
-            categories={[{ label: 'Todas', value: '' }, ...THEMES]}
             value={filters}
-            onChange={(v) =>
-              setFilters({
-                category: v.category ?? '',
-                startDate: v.startDate ?? '',
-                endDate: v.endDate ?? '',
-              })
-            }
+            onChange={handleFilterChange}
+            onClear={handleFilterClear}
+            className="w-full"
+            categories={themeOptions}
           />
         </div>
 
         <div className="flex flex-col gap-6">
-          {listContent}
+          <div className="flex flex-col gap-2">
+            <h1 className="text-3xl font-semibold">Ideias da Comunidade</h1>
+            <p className={cn('text-base', darkMode ? 'text-slate-300' : 'text-gray-600')}>
+              Acompanhe as contribuicoes mais recentes e favorite o que achar interessante.
+            </p>
+          </div>
+          {cardsContent}
 
           {hasIdeas && (
             <div className="flex items-center justify-center pt-2">
               <nav
-                aria-label="Paginação"
+                aria-label="Paginacao"
                 className={cn(
                   'inline-flex items-stretch rounded-lg overflow-hidden',
                   darkMode ? 'border border-slate-700 bg-slate-900' : 'border border-gray-300 bg-white shadow-sm'
                 )}
               >
                 <button
-                  aria-label="Primeira página"
+                  aria-label="Primeira pagina"
                   onClick={() => setPage(1)}
                   disabled={currentPage <= 1}
                   className={cn(
@@ -236,7 +287,7 @@ export default function HistoryPage() {
                   {'\u00AB'}
                 </button>
                 <button
-                  aria-label="Página anterior"
+                  aria-label="Pagina anterior"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={currentPage <= 1}
                   className={cn(
@@ -294,6 +345,37 @@ export default function HistoryPage() {
   )
 }
 
+function toCommunityIdea(idea: Idea): CommunityIdea {
+  return {
+    ...idea,
+    author: idea.author?.trim() || 'Participante desconhecido',
+    tokens: idea.tokens,
+  }
+}
+
+function buildThemeOptions(themes: Theme[]): FilterHistoryOption[] {
+  const seen = new Set<string>()
+  const normalized: FilterHistoryOption[] = []
+  themes.forEach((theme) => {
+    const option = toThemeOption(theme)
+    const key = option.value.toLowerCase()
+    if (seen.has(key)) return
+    seen.add(key)
+    normalized.push(option)
+  })
+  return normalized
+}
+
+function toThemeOption(theme: Theme): FilterHistoryOption {
+  const fallbackLabel =
+    typeof theme.id === 'number' ? `Tema ${theme.id}` : 'Tema personalizado'
+  const label = theme.name?.trim() || fallbackLabel
+  return {
+    label,
+    value: label.toLowerCase(),
+  }
+}
+
 function mergeIdeas(incoming: Idea[], current: Idea[]): Idea[] {
   if (current.length === 0) return incoming
 
@@ -335,17 +417,3 @@ function mergeIdeas(incoming: Idea[], current: Idea[]): Idea[] {
 
   return newIdeas.length > 0 ? [...newIdeas, ...updatedCurrent] : updatedCurrent
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
