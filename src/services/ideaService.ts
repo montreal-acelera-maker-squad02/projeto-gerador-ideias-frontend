@@ -78,10 +78,12 @@ export const ideaService = {
     }
 
     const responseData = await response.json();
+    const newIdea = mapResponseToIdea(responseData);
 
-    emitHistoryRefreshRequest();
+    pushIdeaToCache(newIdea)
+    emitHistoryRefreshRequest({ idea: newIdea });
 
-    return mapResponseToIdea(responseData);
+    return newIdea;
   },
 
   
