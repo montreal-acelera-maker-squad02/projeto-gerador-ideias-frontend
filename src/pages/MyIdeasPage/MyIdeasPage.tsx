@@ -1,69 +1,72 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
 import FilterHistory from "@/components/FilterHistory";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
-import { THEMES } from "@/constants/themes";
 import MyIdeaCard from "@/components/IdeiaCard/MyIdeaCard";
+import { ideaService } from "@/services/ideaService";
 
-
-/** Page size kept equal to HistoryPage for visual parity */
 const PAGE_SIZE = 5;
-
-/**
- * Build some mock ideas just to exercise the layout:
- * - Uses THEMES so filters actually work
- * - 12 ideas for pagination
- */
-function buildMockIdeas(): Idea[] {
-  const now = Date.now();
-  const baseThemes = THEMES.length > 0 ? THEMES : [{ label: "Geral", value: "" }];
-
-  const mocks: Idea[] = [];
-
-  for (let i = 0; i < 12; i++) {
-    const theme = baseThemes[i % baseThemes.length];
-
-    mocks.push({
-      id: `mock-${i + 1}`,
-      content: `Ideia de exemplo #${i + 1} para o tema "${theme.label}".`,
-      context:
-        "Este é apenas um texto de exemplo para visualizar o layout da página de ideias.",
-      theme: theme.value,
-      isFavorite: i % 3 === 0,
-      timestamp: new Date(now - i * 3_600_000), // espaçado de 1h
-      responseTime: 800 + i * 40,
-    });
-  }
-
-  return mocks;
-}
 
 export default function MyIdeasPage() {
   const { darkMode } = useTheme();
 
-
   // === STATE === //
-  const [filters, setFilters] = useState<{ 
-    category: string; 
-    startDate: string; 
-    endDate: string 
+  const [filters, setFilters] = useState<{
+    category: string;
+    startDate: string;
+    endDate: string;
   }>({
-    category: '',
-    startDate: '',
-    endDate: '',
-  })
+    category: "",
+    startDate: "",
+    endDate: "",
+  });
 
   const [page, setPage] = useState<number>(1);
-  const [ideas, setIdeas] = useState<Idea[]>(() => buildMockIdeas());
-  const ideasLoading = false;
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [ideasLoading, setIdeasLoading] = useState<boolean>(true);
+  const [totalPages, setTotalPages] = useState<number>(1);
 
+  // Sempre resetar para página 1 ao mudar filtros
   useMemo(() => {
     setPage(1);
-    // a dependência real é filters.*, mas para layout isso é suficiente
   }, [filters.category, filters.startDate, filters.endDate]);
-  
-    // === HANDLERS MOCKADOS ===
+
+  // === CARREGA PAGINAÇÃO REAL DO BACKEND === //
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadIdeas = async () => {
+      setIdeasLoading(true);
+
+      try {
+        const data = await ideaService.getMyIdeas(page - 1, PAGE_SIZE);
+
+        if (!cancelled) {
+          setIdeas(data.ideas);
+          setTotalPages(data.totalPages);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar minhas ideias:", err);
+        if (!cancelled) {
+          setIdeas([]);
+          setTotalPages(1);
+        }
+      } finally {
+        if (!cancelled) {
+          setIdeasLoading(false);
+        }
+      }
+    };
+
+    loadIdeas();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [page, filters]);
+
+  // HANDLERS LOCAIS (frontend)
   const handleToggleFavorite = (id: string) => {
     setIdeas((prev) =>
       prev.map((idea) =>
@@ -76,30 +79,7 @@ export default function MyIdeasPage() {
     setIdeas((prev) => prev.filter((i) => i.id !== id));
   };
 
-  // === FILTRO + PAGINAÇÃO (MESMA LÓGICA DO HISTORY, SÓ EM MEMÓRIA) ===
-  const filtered = ideas.filter((i) => {
-    const byCat =
-      !filters.category ||
-      (typeof i.theme === "string" &&
-        i.theme.toLowerCase() === filters.category.toLowerCase());
-
-    const ts = new Date(i.timestamp).getTime();
-    const startOk =
-      !filters.startDate ||
-      ts >= new Date(`${filters.startDate}T00:00:00`).getTime();
-    const endOk =
-      !filters.endDate ||
-      ts <= new Date(`${filters.endDate}T23:59:59.999`).getTime();
-
-    return byCat && startOk && endOk;
-  });
-
-  const total = filtered.length;
-  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
-  const currentPage = Math.min(page, totalPages);
-  const start = (currentPage - 1) * PAGE_SIZE;
-  const paginated = filtered.slice(start, start + PAGE_SIZE);
-
+  // === RENDER LIST === //
   const contentClass = cn(
     "rounded-lg border p-6 text-sm h-32 flex items-center justify-center",
     darkMode
@@ -107,50 +87,53 @@ export default function MyIdeasPage() {
       : "bg-white border-gray-200 text-gray-600"
   );
 
-  let listContent: ReactNode = paginated.map((idea) => (
-    <MyIdeaCard
-      key={idea.id}
-      idea={idea}
-      onToggleFavorite={handleToggleFavorite}
-    />
-  ));
+  let listContent: ReactNode =
+    ideas.length > 0 ? (
+      ideas.map((idea) => (
+        <MyIdeaCard
+          key={idea.id}
+          idea={idea}
+          onToggleFavorite={handleToggleFavorite}
+          onDelete={handleDelete}
+        />
+      ))
+    ) : (
+      <div className={contentClass}>Nenhuma ideia encontrada.</div>
+    );
 
   if (ideasLoading) {
     listContent = <div className={contentClass}>Carregando ideias...</div>;
-  } else if (filtered.length === 0) {
-    listContent = <div className={contentClass}>Nenhuma ideia encontrada.</div>;
   }
-
-  const hasIdeas = filtered.length > 0;
 
   return (
     <div
       className={cn(
-        'max-w-7xl mx-auto px-8 py-12 relative z-10',
-        darkMode ? 'text-slate-100' : 'text-gray-900'
+        "max-w-7xl mx-auto px-8 py-12 relative z-10",
+        darkMode ? "text-slate-100" : "text-gray-900"
       )}
     >
-      <div className="grid gap-6 md:grid-cols-[300px_1fr]" >
-        {/* Coluna de filtros */}
+      <div className="grid gap-6 md:grid-cols-[300px_1fr]">
+        {/* FILTROS */}
         <div>
           <FilterHistory
             fixed={false}
-            categories={[{ label: 'Todas', value: '' }, ...THEMES]}
             value={filters}
             onChange={(v) =>
               setFilters({
-                category: v.category ?? '',
-                startDate: v.startDate ?? '',
-                endDate: v.endDate ?? '',
+                category: v.category ?? "",
+                startDate: v.startDate ?? "",
+                endDate: v.endDate ?? "",
               })
             }
           />
         </div>
 
-        {/* Lista de Ideias */}
+        {/* LISTA */}
         <div className="flex flex-col gap-6">
           {listContent}
-          {hasIdeas && (
+
+          {/* PAGINAÇÃO */}
+          {totalPages > 1 && (
             <div className="flex items-center justify-center pt-2">
               <nav
                 aria-label="Paginação"
@@ -164,31 +147,33 @@ export default function MyIdeasPage() {
                 <button
                   aria-label="Primeira página"
                   onClick={() => setPage(1)}
-                  disabled={currentPage <= 1}
+                  disabled={page <= 1}
                   className={cn(
                     "px-3 py-1.5 text-sm transition-colors",
                     darkMode
                       ? "text-slate-200 hover:bg-slate-800"
                       : "text-gray-700 hover:bg-gray-100",
-                    currentPage <= 1 && "opacity-40 cursor-not-allowed"
+                    page <= 1 && "opacity-40 cursor-not-allowed"
                   )}
                 >
                   {"\u00AB"}
                 </button>
+
                 <button
-                  aria-label="Página anterior"
+                  aria-label="Anterior"
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage <= 1}
+                  disabled={page <= 1}
                   className={cn(
                     "px-3 py-1.5 text-sm border-l",
                     darkMode
                       ? "border-slate-700 text-slate-200 hover:bg-slate-800"
                       : "border-gray-300 text-gray-700 hover:bg-gray-100",
-                    currentPage <= 1 && "opacity-40 cursor-not-allowed"
+                    page <= 1 && "opacity-40 cursor-not-allowed"
                   )}
                 >
                   {"\u2039"}
                 </button>
+
                 <span
                   className={cn(
                     "px-4 py-1.5 text-sm font-semibold border-l",
@@ -197,32 +182,34 @@ export default function MyIdeasPage() {
                       : "bg-blue-50 text-blue-700 border-gray-300"
                   )}
                 >
-                  {currentPage}
+                  {page}
                 </span>
+
                 <button
-                  aria-label="Próxima página"
+                  aria-label="Próxima"
                   onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage >= totalPages}
+                  disabled={page >= totalPages}
                   className={cn(
                     "px-3 py-1.5 text-sm border-l",
                     darkMode
                       ? "border-slate-700 text-slate-200 hover:bg-slate-800"
                       : "border-gray-300 text-gray-700 hover:bg-gray-100",
-                    currentPage >= totalPages && "opacity-40 cursor-not-allowed"
+                    page >= totalPages && "opacity-40 cursor-not-allowed"
                   )}
                 >
                   {"\u203A"}
                 </button>
+
                 <button
                   aria-label="Última página"
                   onClick={() => setPage(totalPages)}
-                  disabled={currentPage >= totalPages}
+                  disabled={page >= totalPages}
                   className={cn(
                     "px-3 py-1.5 text-sm border-l",
                     darkMode
                       ? "border-slate-700 text-slate-200 hover:bg-slate-800"
                       : "border-gray-300 text-gray-700 hover:bg-gray-100",
-                    currentPage >= totalPages && "opacity-40 cursor-not-allowed"
+                    page >= totalPages && "opacity-40 cursor-not-allowed"
                   )}
                 >
                   {"\u00BB"}
@@ -233,5 +220,5 @@ export default function MyIdeasPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }
