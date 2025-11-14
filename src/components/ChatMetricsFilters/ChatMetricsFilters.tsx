@@ -110,13 +110,16 @@ export default function ChatMetricsFilters({
                     ? "bg-slate-50 text-slate-900"
                     : "bg-gray-900 text-white"
                   : cn(baseCard, hoverCard)
-                : // keep layout: invisible and non-interactive when not applicable
-                  "invisible pointer-events-none"
+                : "invisible pointer-events-none"
             )}
-            title={canCompare ? "Overlay FREE vs CONTEXT on charts" : undefined}
+            title={
+              canCompare
+                ? "Comparar Livre vs Contexto nos gráficos"
+                : undefined
+            }
           >
             <SlidersHorizontal className="h-4 w-4" />
-            {compare ? "Compare ON" : "Compare OFF"}
+            {compare ? "Comparar " : "Comparar "}
           </button>
         );
       })()}

@@ -1,6 +1,18 @@
 export type ChatType = "FREE" | "CONTEXT";
 export type ChatFilter = "ALL" | "FREE" | "CONTEXT";
 
+export const CHAT_FILTER_LABELS: Record<ChatFilter, string> = {
+  ALL: "Todos os tipos",
+  FREE: "Chat livre",
+  CONTEXT: "Chat com contexto",
+};
+
+export const CHAT_FILTER_BADGE_LABELS: Record<ChatFilter, string> = {
+  ALL: "Todos",
+  FREE: "Livre",
+  CONTEXT: "Contexto",
+};
+
 export type Interaction = {
   interactionId: number;
   timestamp: string;
