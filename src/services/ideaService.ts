@@ -17,10 +17,10 @@ type PageResponse<T> = {
   totalElements: number;
   totalPages: number;
   size: number;
-  number: number; // página atual (0-based)
+  number: number; 
 };
 
-// 🔄 Converte backend -> Idea (modelo usado no front)
+// Converte backend -> modelo do front
 function mapResponseToIdea(response: IdeaApiResponse): Idea {
   return {
     id: String(response.id),
@@ -34,9 +34,9 @@ function mapResponseToIdea(response: IdeaApiResponse): Idea {
 }
 
 export const ideaService = {
-  /**
-   * Gera nova ideia usando /generate
-   */
+  
+  //   Gera nova ideia usando /generate
+   
   async generateIdea(
     themeId: number,
     context: string,
@@ -59,9 +59,9 @@ export const ideaService = {
     return mapResponseToIdea(data);
   },
 
-  /**
-   * Gera ideia aleatória usando /surprise-me
-   */
+  
+  //  * Gera ideia aleatória usando /surprise-me
+   
   async generateSurpriseIdea(): Promise<Idea> {
     const response = await apiFetch("/api/ideas/surprise-me", {
       method: "POST",
@@ -76,9 +76,9 @@ export const ideaService = {
     return mapResponseToIdea(data);
   },
 
-  /**
-   * Favoritar / desfavoritar ideia
-   */
+  
+    // Favoritar / desfavoritar
+   
   async toggleFavorite(ideaId: string, isFavorite: boolean): Promise<void> {
     const method = isFavorite ? "POST" : "DELETE";
     const res = await apiFetch(`/api/ideas/${ideaId}/favorite`, { method });
@@ -90,33 +90,30 @@ export const ideaService = {
     emitHistoryRefreshRequest();
   },
 
-  /**
-   * Buscar lista de favoritos (já vem paginado do backend)
-   */
   async getFavorites(): Promise<Idea[]> {
     const res = await apiFetch("/api/ideas/favorites");
 
     if (!res.ok) throw new Error("Erro ao buscar favoritos");
 
     const page = (await res.json()) as PageResponse<IdeaApiResponse>;
-
     return page.content.map(mapResponseToIdea);
   },
 
-  /**
-   * 🔥 Buscar TODAS as ideias do usuário autenticado
-   * Paginação é feita APENAS no front.
-   */
-  async getMyIdeasAll(): Promise<Idea[]> {
-    // Pegamos até 1000 (seguindo prática do front), pode ajustar depois
-    const res = await apiFetch("/api/ideas/my-ideas?page=0&size=1000");
+ 
+  async getMyIdeas(page: number, size: number) {
+    const res = await apiFetch(`/api/ideas/my-ideas?page=${page}&size=${size}`);
 
     if (!res.ok) {
-      throw new Error("Erro ao carregar minhas ideias");
+      throw new Error("Erro ao carregar ideias do usuário");
     }
 
-    const page = (await res.json()) as PageResponse<IdeaApiResponse>;
+    const data = (await res.json()) as PageResponse<IdeaApiResponse>;
 
-    return page.content.map(mapResponseToIdea);
+    return {
+      ideas: data.content.map(mapResponseToIdea),
+      totalPages: data.totalPages,
+      totalElements: data.totalElements,
+      page: data.number,
+    };
   },
 };
