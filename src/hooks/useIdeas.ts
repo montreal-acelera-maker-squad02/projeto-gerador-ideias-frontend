@@ -1,7 +1,6 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
 import { apiFetch } from '@/lib/api'
-import { THEMES } from '@/constants/themes'
 
 export type IdeasFilters = {
   category?: string
@@ -26,7 +25,7 @@ export function useIdeas(filters: IdeasFilters) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<unknown>(null)
   const abortRef = useRef<AbortController | null>(null)
-  const enabled = import.meta.env.VITE_USE_IDEAS_API === 'true'
+  const enabled = import.meta.env.VITE_USE_IDEAS_API !== 'false'
 
   const query = useMemo(() => buildQuery(filters), [filters.category, filters.startDate, filters.endDate])
   const cacheKey = query || CACHE_KEY_EMPTY
@@ -55,14 +54,14 @@ export function useIdeas(filters: IdeasFilters) {
     }
   }, [query])
 
-  function refetch(options?: { ignoreCache?: boolean; silent?: boolean }) {
+  const refetch = useCallback((options?: { ignoreCache?: boolean; silent?: boolean }) => {
     abortRef.current?.abort()
     abortRef.current = new AbortController()
     void fetchIdeas(abortRef.current.signal, {
       silent: options?.silent ?? false,
       force: options?.ignoreCache,
     })
-  }
+  }, [fetchIdeas])
 
   useEffect(() => {
     if (!enabled) {
@@ -90,6 +89,20 @@ export function useIdeas(filters: IdeasFilters) {
   }, [cacheKey, enabled, fetchIdeas])
 
   return { data, loading, error, refetch }
+}
+
+export function pushIdeaToCache(idea: Idea, query: string = CACHE_KEY_EMPTY) {
+  ensureCacheEntry(query)
+  const entry = ideasCache.get(query)!
+  const deduped = entry.data.filter((i) => i.id !== idea.id)
+  entry.data = [idea, ...deduped]
+  entry.fetchedAt = Date.now()
+}
+
+function ensureCacheEntry(query: string) {
+  if (!ideasCache.has(query)) {
+    ideasCache.set(query, { data: [], fetchedAt: 0 })
+  }
 }
 
 export async function prefetchIdeas(filters: IdeasFilters = {}) {
@@ -141,17 +154,9 @@ async function prefetchIdeasInternal({
         return empty
       }
       if (!res.ok) throw new Error(`Erro ${res.status}`)
-      const json = (await res.json()) as Array<Record<string, any>>
-      const parsed: Idea[] = json.map((it) => {
-        const sourceTs = (it as any).timestamp ?? (it as any).createdAt ?? (it as any).created_at
-        return {
-          ...it,
-          theme: normalizeThemeLabel(it.theme),
-          content: sanitizeQuotedText(it.content),
-          context: sanitizeQuotedText(it.context),
-          timestamp: parseTimestamp(sourceTs),
-        } as Idea
-      })
+      const rawJson: unknown = await res.json()
+      const items = extractArrayPayload(rawJson)
+      const parsed: Idea[] = items.map((payload) => mapCommunityIdeaPayload(payload))
       ideasCache.set(key, { data: parsed, fetchedAt: Date.now() })
       return parsed
     } finally {
@@ -161,6 +166,113 @@ async function prefetchIdeasInternal({
 
   pendingFetches.set(key, fetchPromise)
   return fetchPromise
+}
+
+function mapCommunityIdeaPayload(payload: Record<string, any>): Idea {
+  const sourceTs = payload.timestamp ?? payload.createdAt ?? payload.created_at ?? Date.now()
+  return {
+    id: ensureIdeaId(payload),
+    theme: normalizeThemeLabel(payload.theme),
+    content: sanitizeQuotedText(payload.content),
+    context: sanitizeQuotedText(payload.context),
+    timestamp: parseTimestamp(sourceTs),
+    isFavorite: Boolean(payload.isFavorite),
+    responseTime: pickNumericValue(
+      payload.executionTimeMs,
+      payload.execution_time_ms,
+      payload.responseTime,
+      payload.durationMs,
+      payload.metrics?.executionTime,
+      payload.stats?.executionTime
+    ),
+    author: pickAuthorFromPayload(payload),
+    tokens: pickNumericValue(
+      payload.tokens,
+      payload.tokenCount,
+      payload.tokensUsed,
+      payload.token_usage,
+      payload.usage?.totalTokens,
+      payload.tokenStats?.total,
+      payload.stats?.tokens,
+      payload.metadata?.tokens
+    ),
+    modelUsed: pickModelFromPayload(payload),
+  }
+}
+
+function ensureIdeaId(payload: Record<string, any>): string {
+  const candidates = [payload.id, payload.ideaId, payload.idea_id, payload.uuid, payload._id]
+  for (const candidate of candidates) {
+    if (candidate === undefined || candidate === null) continue
+    const str = String(candidate).trim()
+    if (str) {
+      return str
+    }
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function pickAuthorFromPayload(payload: Record<string, any>): string | undefined {
+  const candidates: Array<unknown> = [
+    payload.userName,
+    payload.username,
+    payload.user_name,
+    payload.author,
+    payload.owner,
+    payload.createdBy,
+    payload.user?.name,
+    payload.user?.username,
+    payload.user?.fullName,
+    payload.metadata?.author,
+    payload.metadata?.userName,
+  ]
+  for (const candidate of candidates) {
+    if (candidate === undefined || candidate === null) continue
+    if (typeof candidate === 'string') {
+      const trimmed = candidate.trim()
+      if (trimmed) return trimmed
+      continue
+    }
+    if (typeof candidate === 'number' || typeof candidate === 'boolean') {
+      return String(candidate)
+    }
+  }
+  return undefined
+}
+
+function pickNumericValue(...values: Array<unknown>): number | undefined {
+  for (const value of values) {
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value
+    }
+    if (typeof value === 'string' && value.trim() !== '') {
+      const parsed = Number(value)
+      if (!Number.isNaN(parsed)) {
+        return parsed
+      }
+    }
+    if (typeof value === 'object' && value !== null) {
+      const maybeNumber = (value as { total?: number; value?: number; amount?: number }).total ??
+        (value as { value?: number }).value ??
+        (value as { amount?: number }).amount
+      if (typeof maybeNumber === 'number' && Number.isFinite(maybeNumber)) {
+        return maybeNumber
+      }
+    }
+  }
+  return undefined
+}
+
+function pickModelFromPayload(payload: Record<string, any>): string | undefined {
+  const candidates = [payload.modelUsed, payload.model_used, payload.model]
+  for (const candidate of candidates) {
+    if (typeof candidate !== 'string') continue
+    const trimmed = candidate.trim()
+    if (trimmed) {
+      return trimmed
+    }
+  }
+  return undefined
 }
 
 function parseTimestamp(input: unknown): Date {
@@ -174,23 +286,47 @@ function parseTimestamp(input: unknown): Date {
   if (typeof input === 'string') {
     let s = input.trim().replace(',', '.')
 
-    const m = s.match(
-      /^(\d{4})-(\d{2})-(\d{2})(?:[T ](\d{2}):(\d{2}):(\d{2})(?:\.(\d+))?)?(Z|[+-]\d{2}:\d{2})?$/
-    )
-    if (m) {
-      const [_, yy, MM, dd, hh, mm, ss, fracRaw, tz] = m
-      const y = Number(yy)
-      const mo = Number(MM) - 1
-      const d = Number(dd)
-      const H = hh ? Number(hh) : 0
-      const Mi = mm ? Number(mm) : 0
-      const S = ss ? Number(ss) : 0
-      const frac = fracRaw ? Number(String(fracRaw).slice(0, 3).padEnd(3, '0')) : 0
+    // Handle plain YYYY-MM-DD early
+    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s + 'T00:00:00')
 
-      if (!tz || tz === '') {
+    // Try to parse ISO-like date/time by splitting components to keep regex simple
+    const datePart = s.slice(0, 10)
+    if (/^\d{4}-\d{2}-\d{2}$/.test(datePart) && (s.length === 10 || s[10] === 'T' || s[10] === ' ')) {
+      const ymd = datePart.split('-')
+      const y = Number(ymd[0])
+      const mo = Number(ymd[1]) - 1
+      const d = Number(ymd[2])
+
+      const rest = s.length === 10 ? '' : s.slice(11) // skip 'T' or space
+      // Extract timezone if present at the end
+      const tzMatch = rest.match(/(Z|[+-]\d{2}:\d{2})$/)
+      const tz = tzMatch ? tzMatch[1] : ''
+      const timeStr = tzMatch ? rest.slice(0, -tzMatch[0].length) : rest
+
+      if (!timeStr) {
+        // date only -> local midnight
+        return new Date(y, mo, d, 0, 0, 0, 0)
+      }
+
+      // timeStr like "HH:MM", "HH:MM:SS" or "HH:MM:SS.sss"
+      const [hPart, mPart, sPart = '0'] = timeStr.split(':')
+      const H = Number(hPart || 0)
+      const Mi = Number(mPart || 0)
+
+      let S = 0
+      let frac = 0
+      if (sPart) {
+        const [secRaw, fracRaw] = sPart.split('.')
+        S = Number(secRaw || 0)
+        frac = fracRaw ? Number(String(fracRaw).slice(0, 3).padEnd(3, '0')) : 0
+      }
+
+      if (!tz) {
+        // no timezone -> treat as local time
         return new Date(y, mo, d, H, Mi, S, frac)
       }
 
+      // timezone present -> compute UTC ms manually
       let utcMs = Date.UTC(y, mo, d, H, Mi, S, frac)
       if (tz !== 'Z') {
         const sign = tz.startsWith('-') ? -1 : 1
@@ -200,8 +336,6 @@ function parseTimestamp(input: unknown): Date {
       }
       return new Date(utcMs)
     }
-
-    if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return new Date(s + 'T00:00:00')
 
     const dflt = new Date(s)
     if (!isNaN(dflt.getTime())) return dflt
@@ -228,12 +362,33 @@ function sanitizeQuotedText(text: unknown): string {
 
 function normalizeThemeLabel(input: unknown): string {
   if (typeof input !== 'string') return String(input ?? '')
-  const raw = input.trim().toLowerCase()
-  const found = THEMES.find((t) => t.value.toLowerCase() === raw || t.label.toLowerCase() === raw)
-  return found ? found.label : capitalizeFirst(raw)
+  return capitalizeFirst(input.trim().toLowerCase())
 }
 
 function capitalizeFirst(s: string): string {
   if (!s) return s
   return s.charAt(0).toUpperCase() + s.slice(1)
 }
+
+function extractArrayPayload(raw: unknown): Array<Record<string, any>> {
+  if (Array.isArray(raw)) {
+    return raw as Array<Record<string, any>>
+  }
+  if (raw && typeof raw === 'object') {
+    const candidateKeys = ['data', 'items', 'results', 'history', 'ideas']
+    const obj = raw as Record<string, any>
+    for (const key of candidateKeys) {
+      if (Array.isArray(obj[key])) {
+        return obj[key] as Array<Record<string, any>>
+      }
+    }
+    for (const value of Object.values(obj)) {
+      if (Array.isArray(value)) {
+        return value as Array<Record<string, any>>
+      }
+    }
+  }
+  console.warn('Resposta inesperada ao buscar o histórico', raw)
+  return []
+}
+

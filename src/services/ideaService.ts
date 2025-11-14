@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api";
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
 import { emitHistoryRefreshRequest } from "@/events/historyEvents";
+import { pushIdeaToCache } from "@/hooks/useIdeas";
 
 type IdeaApiResponse = {
   id: string | number;
@@ -30,6 +31,7 @@ function mapResponseToIdea(response: IdeaApiResponse): Idea {
     isFavorite: response.isFavorite ?? false,
     responseTime: response.executionTimeMs,
     context: response.context || "",
+    author: response.userName?.trim() || response.author?.trim() || undefined,
   };
 }
 
@@ -54,9 +56,13 @@ export const ideaService = {
       throw new Error((await response.text()) || "Erro ao gerar ideia");
     }
 
-    const data = await response.json();
-    emitHistoryRefreshRequest();
-    return mapResponseToIdea(data);
+    const responseData = await response.json();
+    const newIdea = mapResponseToIdea(responseData);
+
+    pushIdeaToCache(newIdea)
+    emitHistoryRefreshRequest({ idea: newIdea });
+
+    return newIdea;
   },
 
   
@@ -71,9 +77,13 @@ export const ideaService = {
       throw new Error((await response.text()) || "Erro ao gerar ideia surpresa");
     }
 
-    const data = await response.json();
-    emitHistoryRefreshRequest();
-    return mapResponseToIdea(data);
+    const responseData = await response.json();
+    const newIdea = mapResponseToIdea(responseData);
+
+    pushIdeaToCache(newIdea)
+    emitHistoryRefreshRequest({ idea: newIdea });
+
+    return newIdea;
   },
 
   
@@ -91,29 +101,8 @@ export const ideaService = {
   },
 
   async getFavorites(): Promise<Idea[]> {
-    const res = await apiFetch("/api/ideas/favorites");
-
-    if (!res.ok) throw new Error("Erro ao buscar favoritos");
-
-    const page = (await res.json()) as PageResponse<IdeaApiResponse>;
-    return page.content.map(mapResponseToIdea);
-  },
-
- 
-  async getMyIdeas(page: number, size: number) {
-    const res = await apiFetch(`/api/ideas/my-ideas?page=${page}&size=${size}`);
-
-    if (!res.ok) {
-      throw new Error("Erro ao carregar ideias do usuário");
-    }
-
-    const data = (await res.json()) as PageResponse<IdeaApiResponse>;
-
-    return {
-      ideas: data.content.map(mapResponseToIdea),
-      totalPages: data.totalPages,
-      totalElements: data.totalElements,
-      page: data.number,
-    };
-  },
-};
+    const res = await apiFetch("/api/ideas/favorites")
+    if (!res.ok) throw new Error("Erro ao buscar favoritos")
+    return await res.json()
+  }
+}

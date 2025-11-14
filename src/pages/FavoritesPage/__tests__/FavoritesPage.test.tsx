@@ -3,17 +3,17 @@ import { screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { renderWithProviders } from '@/test/test-utils'
 import FavoritesPage from '../FavoritesPage'
-import { ideaService } from '@/services/ideaService'
+import { favoriteService } from '@/services/favoriteService'
 
-vi.mock('@/services/ideaService', () => ({
-  ideaService: {
+vi.mock('@/services/favoriteService', () => ({
+  favoriteService: {
     getFavorites: vi.fn(),
-    toggleFavorite: vi.fn(),
+    removeFavorite: vi.fn(),
   },
 }))
 
-const mockGetFavorites = vi.mocked(ideaService.getFavorites)
-const mockToggleFavorite = vi.mocked(ideaService.toggleFavorite)
+const mockGetFavorites = vi.mocked(favoriteService.getFavorites)
+const mockRemoveFavorite = vi.mocked(favoriteService.removeFavorite)
 
 const sampleIdeas = [
   {
@@ -64,7 +64,7 @@ describe('FavoritesPage', () => {
 
   it('remove a ideia da lista ao desfavoritar', async () => {
     mockGetFavorites.mockResolvedValueOnce(sampleIdeas)
-    mockToggleFavorite.mockResolvedValueOnce()
+    mockRemoveFavorite.mockResolvedValueOnce()
 
     renderWithProviders(<FavoritesPage />)
     await screen.findByText(sampleIdeas[0].content)
@@ -72,7 +72,7 @@ describe('FavoritesPage', () => {
     const unfavoriteButton = screen.getAllByRole('button', { name: /desfavoritar/i })[0]
     await userEvent.click(unfavoriteButton)
 
-    expect(mockToggleFavorite).toHaveBeenCalledWith('idea-1', false)
+    expect(mockRemoveFavorite).toHaveBeenCalledWith('idea-1')
     await waitFor(() => {
       expect(screen.queryByText(sampleIdeas[0].content)).not.toBeInTheDocument()
     })

@@ -18,10 +18,9 @@ vi.mock('@/services/ideaService', () => ({
   },
 }))
 
-const IdeaHistoryCardMock = vi.fn((props: {
+const CommunityIdeaCardMock = vi.fn((props: {
   idea: Idea
   onToggleFavorite?: (id: string) => void
-  onDelete?: (id: string) => void
 }) => (
   <div data-testid={`history-card-${props.idea.id}`}>
     <p>{props.idea.content}</p>
@@ -29,14 +28,11 @@ const IdeaHistoryCardMock = vi.fn((props: {
     <button aria-label={`Favoritar ${props.idea.id}`} onClick={() => props.onToggleFavorite?.(props.idea.id)}>
       Favoritar
     </button>
-    <button aria-label={`Excluir ${props.idea.id}`} onClick={() => props.onDelete?.(props.idea.id)}>
-      Excluir
-    </button>
   </div>
 ))
 
-vi.mock('@/components/IdeiaCard/IdeaHistoryCard', () => ({
-  default: (props: any) => IdeaHistoryCardMock(props),
+vi.mock('@/components/IdeiaCard/CommunityIdeaCard', () => ({
+  default: (props: any) => CommunityIdeaCardMock(props),
 }))
 
 const makeIdea = (id: string): Idea => ({
@@ -85,7 +81,7 @@ describe('HistoryPage', () => {
     await screen.findByTestId('history-card-1')
     expect(screen.queryByTestId('history-card-6')).not.toBeInTheDocument()
 
-    const firstCallProps = IdeaHistoryCardMock.mock.calls[0][0]
+    const firstCallProps = CommunityIdeaCardMock.mock.calls[0][0]
     expect(typeof firstCallProps.onToggleFavorite).toBe('function')
 
     await user.click(screen.getByRole('button', { name: /proxima pagina/i }))
@@ -102,7 +98,7 @@ describe('HistoryPage', () => {
     await screen.findByTestId('history-card-fav-1')
     expect(screen.getByTestId('favorite-flag-fav-1')).toHaveTextContent('false')
 
-    const toggleHandler = IdeaHistoryCardMock.mock.calls.at(-1)?.[0].onToggleFavorite
+    const toggleHandler = CommunityIdeaCardMock.mock.calls.at(-1)?.[0].onToggleFavorite
     expect(typeof toggleHandler).toBe('function')
 
     await act(async () => {
