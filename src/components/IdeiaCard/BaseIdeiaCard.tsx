@@ -34,6 +34,7 @@ export type BaseIdeaCardProps = {
   actions?: ActionsKind;
   headerRight?: ReactNode;
   footerRight?: ReactNode;
+  footerLeft?: ReactNode;
   onToggleFavorite?: (id: string) => void;
   onCopy?: (text: string) => void;
   onShare?: (text: string) => void;
@@ -160,6 +161,7 @@ export default memo(function BaseIdeaCard({
   actions = "full",
   headerRight,
   footerRight,
+  footerLeft,
   onToggleFavorite,
   onCopy,
   onShare,
@@ -218,10 +220,14 @@ export default memo(function BaseIdeaCard({
   );
 
   // actions node
-  const actionsNode =
-    footerRight !== undefined ? (
-      <div className="shrink-0">{footerRight}</div>
-    ) : actions !== "none" && actions === "full" ? (
+  let rightNode: ReactNode = null;
+
+  if (footerRight !== undefined) {
+    // custom right (ex: botão de excluir, stats etc.)
+    rightNode = footerRight;
+  } else if (actions !== "none" && actions === "full") {
+    // default: ações completas (copiar / compartilhar / fav)
+    rightNode = (
       <FullActions
         isFavorite={idea.isFavorite}
         onFav={() => onToggleFavorite?.(idea.id)}
@@ -242,10 +248,17 @@ export default memo(function BaseIdeaCard({
         }}
         isDark={darkMode}
       />
-    ) : null;
+    );
+  }
+
+  // left node pode ser custom ou o meta padrão
+  const leftNode: ReactNode = footerLeft !== undefined ? footerLeft : metaNode;
 
   const shouldShowFooter =
-    metaMode !== "none" || actions !== "none" || !!footerRight;
+    metaMode !== "none" ||
+    actions !== "none" ||
+    !!footerRight ||
+    footerLeft !== undefined;
 
   return (
     <SectionContainer
@@ -296,8 +309,17 @@ export default memo(function BaseIdeaCard({
               : "pt-2"
           )}
         >
-          {metaNode}
-          {actionsNode}
+          {/* LADO ESQUERDO */}
+          <div className="flex-1 min-w-0">
+            {leftNode}
+          </div>
+
+          {/* LADO DIREITO */}
+          {rightNode && (
+            <div className="shrink-0">
+              {rightNode}
+            </div>
+          )}
         </div>
       )}
     </SectionContainer>

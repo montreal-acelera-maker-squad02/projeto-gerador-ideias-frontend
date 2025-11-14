@@ -3,7 +3,7 @@ import BaseIdeaCard, { type BaseIdeaCardProps } from "./BaseIdeiaCard";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
 
-export default function IdeaHistoryCard(
+export default function MyIdeaCard(
   props: Readonly<
     Omit<
       BaseIdeaCardProps,

@@ -10,7 +10,8 @@ export type NavItem = Readonly<{ to: string; label: string; exact?: boolean }>;
 
 const DEFAULT_NAV: NavItem[] = [
   { to: "/generator", label: "Início" },
-  { to: "/history", label: "Histórico" },
+  { to: "/my-ideas", label: "Minhas Ideias"},
+  { to: "/history", label: "Comunidade" },
   { to: "/favorites", label: "Favoritos" },
   { to: "/dashboard", label: "Dashboard" },
 ];
