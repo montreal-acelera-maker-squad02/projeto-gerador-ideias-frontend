@@ -71,7 +71,7 @@ describe('RegisterForm', () => {
       'Senha@123',
       'Senha@123'
     )
-    expect(mockNavigate).toHaveBeenCalledWith('/login', { replace: true })
+    expect(mockNavigate).toHaveBeenCalledWith('/generator', { replace: true })
   })
 
   it('exibe mensagem amigável quando backend retorna conflito', async () => {
