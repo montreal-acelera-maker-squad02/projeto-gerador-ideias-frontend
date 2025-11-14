@@ -1,5 +1,5 @@
 ﻿import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
-import IdeaHistoryCard from '@/components/IdeiaCard/IdeaHistoryCard'
+import MyIdeaCard from '@/components/IdeiaCard/MyIdeaCard'
 import FilterHistory from '@/components/FilterHistory'
 import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
 import { useIdeas } from '@/hooks/useIdeas'
@@ -164,7 +164,7 @@ export default function HistoryPage() {
   )
 
   let listContent: ReactNode = paginated.map((idea) => (
-    <IdeaHistoryCard key={idea.id} idea={idea} onToggleFavorite={handleToggleFavorite} onDelete={handleDelete} />
+    <MyIdeaCard key={idea.id} idea={idea} onToggleFavorite={handleToggleFavorite} onDelete={handleDelete} />
   ))
 
   if (ideasLoading) {
