@@ -1,69 +1,69 @@
-import { useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
 import FilterHistory from "@/components/FilterHistory";
 import { useTheme } from "@/hooks/useTheme";
 import { cn } from "@/lib/utils";
-import { THEMES } from "@/constants/themes";
 import MyIdeaCard from "@/components/IdeiaCard/MyIdeaCard";
-
+import { ideaService } from "@/services/ideaService";
 
 /** Page size kept equal to HistoryPage for visual parity */
 const PAGE_SIZE = 5;
 
-/**
- * Build some mock ideas just to exercise the layout:
- * - Uses THEMES so filters actually work
- * - 12 ideas for pagination
- */
-function buildMockIdeas(): Idea[] {
-  const now = Date.now();
-  const baseThemes = THEMES.length > 0 ? THEMES : [{ label: "Geral", value: "" }];
-
-  const mocks: Idea[] = [];
-
-  for (let i = 0; i < 12; i++) {
-    const theme = baseThemes[i % baseThemes.length];
-
-    mocks.push({
-      id: `mock-${i + 1}`,
-      content: `Ideia de exemplo #${i + 1} para o tema "${theme.label}".`,
-      context:
-        "Este é apenas um texto de exemplo para visualizar o layout da página de ideias.",
-      theme: theme.value,
-      isFavorite: i % 3 === 0,
-      timestamp: new Date(now - i * 3_600_000), // espaçado de 1h
-      responseTime: 800 + i * 40,
-    });
-  }
-
-  return mocks;
-}
-
 export default function MyIdeasPage() {
   const { darkMode } = useTheme();
 
-
   // === STATE === //
-  const [filters, setFilters] = useState<{ 
-    category: string; 
-    startDate: string; 
-    endDate: string 
+  const [filters, setFilters] = useState<{
+    category: string;
+    startDate: string;
+    endDate: string;
   }>({
-    category: '',
-    startDate: '',
-    endDate: '',
-  })
+    category: "",
+    startDate: "",
+    endDate: "",
+  });
 
   const [page, setPage] = useState<number>(1);
-  const [ideas, setIdeas] = useState<Idea[]>(() => buildMockIdeas());
-  const ideasLoading = false;
+  const [ideas, setIdeas] = useState<Idea[]>([]);
+  const [ideasLoading, setIdeasLoading] = useState<boolean>(true);
 
+  // Reset para primeira página ao alterar filtros
   useMemo(() => {
     setPage(1);
     // a dependência real é filters.*, mas para layout isso é suficiente
   }, [filters.category, filters.startDate, filters.endDate]);
-  
-    // === HANDLERS MOCKADOS ===
+
+  // === CARREGAR MINHAS IDEIAS DO BACKEND AO MONTAR A PÁGINA ===
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadMyIdeas = async () => {
+      setIdeasLoading(true);
+      try {
+        const data = await ideaService.getMyIdeasAll();
+        if (!cancelled) {
+          setIdeas(data);
+        }
+      } catch (err) {
+        console.error("Erro ao carregar minhas ideias:", err);
+        if (!cancelled) {
+          setIdeas([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setIdeasLoading(false);
+        }
+      }
+    };
+
+    loadMyIdeas();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // === HANDLERS MOCKADOS (ainda locais, sem chamar backend de favorito/deletar) ===
   const handleToggleFavorite = (id: string) => {
     setIdeas((prev) =>
       prev.map((idea) =>
@@ -112,13 +112,16 @@ export default function MyIdeasPage() {
       key={idea.id}
       idea={idea}
       onToggleFavorite={handleToggleFavorite}
+      onDelete={handleDelete}
     />
   ));
 
   if (ideasLoading) {
     listContent = <div className={contentClass}>Carregando ideias...</div>;
   } else if (filtered.length === 0) {
-    listContent = <div className={contentClass}>Nenhuma ideia encontrada.</div>;
+    listContent = (
+      <div className={contentClass}>Nenhuma ideia encontrada.</div>
+    );
   }
 
   const hasIdeas = filtered.length > 0;
@@ -126,22 +129,21 @@ export default function MyIdeasPage() {
   return (
     <div
       className={cn(
-        'max-w-7xl mx-auto px-8 py-12 relative z-10',
-        darkMode ? 'text-slate-100' : 'text-gray-900'
+        "max-w-7xl mx-auto px-8 py-12 relative z-10",
+        darkMode ? "text-slate-100" : "text-gray-900"
       )}
     >
-      <div className="grid gap-6 md:grid-cols-[300px_1fr]" >
+      <div className="grid gap-6 md:grid-cols-[300px_1fr]">
         {/* Coluna de filtros */}
         <div>
           <FilterHistory
             fixed={false}
-            categories={[{ label: 'Todas', value: '' }, ...THEMES]}
             value={filters}
             onChange={(v) =>
               setFilters({
-                category: v.category ?? '',
-                startDate: v.startDate ?? '',
-                endDate: v.endDate ?? '',
+                category: v.category ?? "",
+                startDate: v.startDate ?? "",
+                endDate: v.endDate ?? "",
               })
             }
           />
@@ -208,7 +210,8 @@ export default function MyIdeasPage() {
                     darkMode
                       ? "border-slate-700 text-slate-200 hover:bg-slate-800"
                       : "border-gray-300 text-gray-700 hover:bg-gray-100",
-                    currentPage >= totalPages && "opacity-40 cursor-not-allowed"
+                    currentPage >= totalPages &&
+                      "opacity-40 cursor-not-allowed"
                   )}
                 >
                   {"\u203A"}
@@ -222,7 +225,8 @@ export default function MyIdeasPage() {
                     darkMode
                       ? "border-slate-700 text-slate-200 hover:bg-slate-800"
                       : "border-gray-300 text-gray-700 hover:bg-gray-100",
-                    currentPage >= totalPages && "opacity-40 cursor-not-allowed"
+                    currentPage >= totalPages &&
+                      "opacity-40 cursor-not-allowed"
                   )}
                 >
                   {"\u00BB"}
@@ -233,5 +237,5 @@ export default function MyIdeasPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

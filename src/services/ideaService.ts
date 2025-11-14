@@ -1,5 +1,5 @@
-import { apiFetch } from "@/lib/api"
-import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard"
+import { apiFetch } from "@/lib/api";
+import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
 import { emitHistoryRefreshRequest } from "@/events/historyEvents";
 
 type IdeaApiResponse = {
@@ -9,91 +9,114 @@ type IdeaApiResponse = {
   createdAt?: string;
   executionTimeMs?: number;
   context?: string;
+  isFavorite?: boolean;
 };
 
+type PageResponse<T> = {
+  content: T[];
+  totalElements: number;
+  totalPages: number;
+  size: number;
+  number: number; // página atual (0-based)
+};
+
+// 🔄 Converte backend -> Idea (modelo usado no front)
 function mapResponseToIdea(response: IdeaApiResponse): Idea {
-  const newIdea: Idea = {
+  return {
     id: String(response.id),
     theme: response.theme,
     content: response.content,
     timestamp: new Date(response.createdAt || Date.now()),
-    isFavorite: false,
+    isFavorite: response.isFavorite ?? false,
     responseTime: response.executionTimeMs,
     context: response.context || "",
   };
-  return newIdea;
 }
-
 
 export const ideaService = {
   /**
-   * Gera uma nova ideia.
-   * @param themeId O ID do tema selecionado
-   * @param context O contexto fornecido pelo usuário
-   * @param skipCache Se true, envia 'skipCache=true' para a API
+   * Gera nova ideia usando /generate
    */
-  async generateIdea(themeId: number, context: string, skipCache: boolean = false): Promise<Idea> {
-    const url = new URL('/api/ideas/generate', window.location.origin);
-    if (skipCache) {
-      url.searchParams.set('skipCache', 'true');
-    }
-
-    const requestBody = {
-      theme: themeId,
-      context: context,
-    };
+  async generateIdea(
+    themeId: number,
+    context: string,
+    skipCache: boolean = false
+  ): Promise<Idea> {
+    const url = new URL("/api/ideas/generate", window.location.origin);
+    if (skipCache) url.searchParams.set("skipCache", "true");
 
     const response = await apiFetch(url.pathname + url.search, {
-      method: 'POST',
-      body: JSON.stringify(requestBody),
+      method: "POST",
+      body: JSON.stringify({ theme: themeId, context }),
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'Erro ao gerar ideia');
+      throw new Error((await response.text()) || "Erro ao gerar ideia");
     }
 
-    const responseData = await response.json();
-
+    const data = await response.json();
     emitHistoryRefreshRequest();
-
-    return mapResponseToIdea(responseData);
+    return mapResponseToIdea(data);
   },
 
   /**
-     * Gera uma ideia aleatória usando o endpoint /surprise-me
-     */
+   * Gera ideia aleatória usando /surprise-me
+   */
   async generateSurpriseIdea(): Promise<Idea> {
-    const response = await apiFetch('/api/ideas/surprise-me', {
-      method: 'POST',
+    const response = await apiFetch("/api/ideas/surprise-me", {
+      method: "POST",
     });
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(errorText || 'Erro ao gerar ideia surpresa');
+      throw new Error((await response.text()) || "Erro ao gerar ideia surpresa");
     }
 
-    const responseData = await response.json();
-
+    const data = await response.json();
     emitHistoryRefreshRequest();
-
-    return mapResponseToIdea(responseData);
+    return mapResponseToIdea(data);
   },
 
+  /**
+   * Favoritar / desfavoritar ideia
+   */
   async toggleFavorite(ideaId: string, isFavorite: boolean): Promise<void> {
-    const method = isFavorite ? "POST" : "DELETE"
-    const res = await apiFetch(`/api/ideas/${ideaId}/favorite`, { method })
+    const method = isFavorite ? "POST" : "DELETE";
+    const res = await apiFetch(`/api/ideas/${ideaId}/favorite`, { method });
+
     if (!res.ok) {
-      const msg = await res.text()
-      throw new Error(msg || "Erro ao favoritar ideia")
+      throw new Error((await res.text()) || "Erro ao atualizar favorito");
     }
 
     emitHistoryRefreshRequest();
   },
 
+  /**
+   * Buscar lista de favoritos (já vem paginado do backend)
+   */
   async getFavorites(): Promise<Idea[]> {
-    const res = await apiFetch("/api/ideas/favorites")
-    if (!res.ok) throw new Error("Erro ao buscar favoritos")
-    return await res.json()
-  }
-}
+    const res = await apiFetch("/api/ideas/favorites");
+
+    if (!res.ok) throw new Error("Erro ao buscar favoritos");
+
+    const page = (await res.json()) as PageResponse<IdeaApiResponse>;
+
+    return page.content.map(mapResponseToIdea);
+  },
+
+  /**
+   * 🔥 Buscar TODAS as ideias do usuário autenticado
+   * Paginação é feita APENAS no front.
+   */
+  async getMyIdeasAll(): Promise<Idea[]> {
+    // Pegamos até 1000 (seguindo prática do front), pode ajustar depois
+    const res = await apiFetch("/api/ideas/my-ideas?page=0&size=1000");
+
+    if (!res.ok) {
+      throw new Error("Erro ao carregar minhas ideias");
+    }
+
+    const page = (await res.json()) as PageResponse<IdeaApiResponse>;
+
+    return page.content.map(mapResponseToIdea);
+  },
+};
