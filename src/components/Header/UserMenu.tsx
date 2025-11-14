@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
-import { Sun, Moon, ChevronDown, LogOut, BarChart3 } from "lucide-react";
+import { Sun, Moon, ChevronDown, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTheme } from '@/hooks/useTheme';
 
@@ -58,10 +58,20 @@ export const UserMenu: React.FC<UserMenuProps> = ({
     else navigate("/login");
   };
 
-  const handleMetricsClick = () => {
-    setOpen(false);
-    navigate("/chatbot-metrics");
-  };
+  const NAVIGATION_PATHS = new Set<string>([
+    "/generator",
+    "/my-ideas",
+    "/community",
+    "/favorites",
+  ]);
+
+  const DASHBOARD_PATHS = new Set<string>([
+    "/dashboard",
+    "/chatbot-metrics",
+  ]);
+
+  const navigationItems = nav.filter((item) => NAVIGATION_PATHS.has(item.to));
+  const dashboardItems = nav.filter((item) => DASHBOARD_PATHS.has(item.to));
 
   return (
     <div className={cn("relative", className)}>
@@ -98,21 +108,6 @@ export const UserMenu: React.FC<UserMenuProps> = ({
               : "bg-white border-gray-200"
           )}
         >
-          {/* Metrics */}
-          <button
-            type="button"
-            onClick={handleMetricsClick}
-            className={cn(
-              "w-full text-left px-4 py-3 text-sm flex items-center gap-3 transition-all-smooth",
-              darkMode ? "hover:bg-slate-800 text-slate-50" : "hover:bg-gray-100 text-gray-700"
-            )}
-            role="menuitem"
-          >
-            <BarChart3 className="w-4 h-4" />
-            <span>Métricas</span>
-          </button>
-
-          <div className={cn("my-1 h-px", darkMode ? "bg-slate-700" : "bg-gray-200")} />
 
           {/* Theme toggle */}
           <button
@@ -137,49 +132,125 @@ export const UserMenu: React.FC<UserMenuProps> = ({
             )}
           </button>
 
-          <div className={cn("my-1 h-px", darkMode ? "bg-slate-700" : "bg-gray-200")} />
+          {/* Divider principal após toggle (mantido) */}
+          <div
+            className={cn(
+              "my-1 h-px",
+              darkMode ? "bg-slate-700" : "bg-gray-200"
+            )}
+          />
 
-          {/* Mobile nav inside dropdown */}
+          {/* Navegação + Dashboards dentro do menu */}
           {includeMobileNav && nav.length > 0 && (
-            <div className="block md:hidden">
-              <div className={cn(
-                  "px-4 py-2 text-xs uppercase tracking-wide",
-                  darkMode ? "text-slate-400" : "text-gray-500"
+            <>
+              {/* Seção: Navegação */}
+              {navigationItems.length > 0 && (
+                <>
+                  <div
+                    className={cn(
+                      "px-4 pt-2 pb-1 text-xs uppercase tracking-wide",
+                      darkMode ? "text-slate-400" : "text-gray-500"
+                    )}
+                  >
+                    Navegação
+                  </div>
+                  <ul className="py-1">
+                    {navigationItems.map((item) => (
+                      <li key={item.to}>
+                        <NavLink
+                          to={item.to}
+                          end={item.exact}
+                          onClick={() => setOpen(false)}
+                          className={({ isActive }) => {
+                            const base =
+                              "block px-4 py-2 text-sm transition-all-smooth";
+                            let stateClass = "";
+
+                            if (isActive && darkMode)
+                              stateClass = "text-blue-300";
+                            else if (isActive && !darkMode)
+                              stateClass = "text-blue-600";
+                            else if (!isActive && darkMode)
+                              stateClass =
+                                "text-slate-100 hover:bg-slate-800";
+                            else
+                              stateClass =
+                                "text-gray-700 hover:bg-gray-100";
+
+                            return cn(base, stateClass);
+                          }}
+                        >
+                          {item.label}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {/* Divider mais sutil entre seções */}
+              {navigationItems.length > 0 && dashboardItems.length > 0 && (
+                <div
+                  className={cn(
+                    "mx-4 my-1 h-px",
+                    darkMode ? "bg-slate-700" : "bg-gray-200"
+                  )}
+                />
+              )}
+
+              {/* Seção: Dashboards de uso */}
+              {dashboardItems.length > 0 && (
+                <>
+                  <div
+                    className={cn(
+                      "px-4 pt-2 pb-1 text-xs uppercase tracking-wide",
+                      darkMode ? "text-slate-400" : "text-gray-500"
+                    )}
+                  >
+                    Dashboards de uso
+                  </div>
+                  <ul className="py-1">
+                    {dashboardItems.map((item) => (
+                      <li key={item.to}>
+                        <NavLink
+                          to={item.to}
+                          end={item.exact}
+                          onClick={() => setOpen(false)}
+                          className={({ isActive }) => {
+                            const base =
+                              "block px-4 py-2 text-sm transition-all-smooth";
+                            let stateClass = "";
+
+                            if (isActive && darkMode)
+                              stateClass = "text-blue-300";
+                            else if (isActive && !darkMode)
+                              stateClass = "text-blue-600";
+                            else if (!isActive && darkMode)
+                              stateClass =
+                                "text-slate-100 hover:bg-slate-800";
+                            else
+                              stateClass =
+                                "text-gray-700 hover:bg-gray-100";
+
+                            return cn(base, stateClass);
+                          }}
+                        >
+                          {item.label}
+                        </NavLink>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              )}
+
+              {/* Divider */}
+              <div
+                className={cn(
+                  "my-1 h-px",
+                  darkMode ? "bg-slate-700" : "bg-gray-200"
                 )}
-              >
-                Navegação
-              </div>
-              <ul className="py-1">
-                {nav.map((item) => (
-                  <li key={item.to}>
-                    <NavLink
-                      to={item.to}
-                      end={item.exact}
-                      onClick={() => setOpen(false)}
-                      className={({ isActive }) => {
-                        const base =
-                          "block px-4 py-2 text-sm transition-all-smooth";
-                        let stateClass = "";
-
-                        if (isActive && darkMode)
-                          stateClass = "text-blue-300";
-                        else if (isActive && !darkMode)
-                          stateClass = "text-blue-600";
-                        else if (!isActive && darkMode)
-                          stateClass = "text-slate-100 hover:bg-slate-800";
-                        else 
-                          stateClass = "text-gray-700 hover:bg-gray-100";
-
-                        return cn(base, stateClass);
-                      }}
-                    >
-                      {item.label}
-                    </NavLink>
-                  </li>
-                ))}
-              </ul>
-              <div className={cn("my-1 h-px", darkMode ? "bg-slate-700" : "bg-gray-200")} />
-            </div>
+              />
+            </>
           )}
 
           {/* Logout */}
