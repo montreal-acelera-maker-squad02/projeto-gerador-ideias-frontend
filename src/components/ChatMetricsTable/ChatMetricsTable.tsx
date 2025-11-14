@@ -7,7 +7,7 @@ import { CHAT_FILTER_BADGE_LABELS } from "@/types/chatMetrics";
 
 type Row = {
   interactionId: number;
-  timestamp: string; // ISO
+  timestamp: string;
   sessionId: number;
   chatFilter: ChatFilter;
   tokensInput: number;
@@ -17,7 +17,6 @@ type Row = {
   assistantMessage: string;
   ideaId?: number | null;
 
-  /** Admin only **/
   userName?: string | null;
   userEmail?: string | null;
 };
@@ -25,14 +24,12 @@ type Row = {
 export type ChatMetricsTableProps = {
   items: Row[];
   dark: boolean;
-  scopeLabel?: string; // e.g., "ALL" | "FREE" | "CONTEXT"
-  /** Admin: show username + email columns */
+  scopeLabel?: string;
   showUserColumns?: boolean;
-  /** Show IDs column (interaction, session, idea) */
   showIds?: boolean;
 };
 
-export default function ChatMetricsTable ({
+export default function ChatMetricsTable({
   items,
   dark,
   scopeLabel,
@@ -58,111 +55,92 @@ export default function ChatMetricsTable ({
 
   const toggle = useCallback((id: number) => {
     setExpanded(prev => {
-        const next = new Set(prev);
-        if (next.has(id)) {
-        next.delete(id);
-        } else {
-        next.add(id);
-        }
-        return next;
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
     });
   }, []);
 
   const totalColumns = 6 + (showUserColumns ? 2 : 0) + (showIds ? 1 : 0);
 
+  // 🔵 Tradução do filtro selecionado
+  const scopeLabelPt =
+    scopeLabel === "ALL"
+      ? "Todos"
+      : scopeLabel === "FREE"
+      ? "Livres"
+      : scopeLabel === "CONTEXT"
+      ? "Com contexto"
+      : "—";
+
   return (
     <>
       <div className="flex flex-wrap items-center justify-between gap-2 border-b p-4">
         <h3 className="text-sm font-medium">Interações ({items.length})</h3>
+
         <div className={cn("text-xs", theme.muted)}>
-          Mostrando: {scopeLabel ?? "—"}
+          Mostrando: {scopeLabelPt}
         </div>
       </div>
 
       <div className="max-h-[560px] overflow-auto">
         <table className="w-full text-left text-sm">
-          <thead
-            className={cn("sticky top-0 z-10", theme.headerBg, theme.muted)}
-          >
+          <thead className={cn("sticky top-0 z-10", theme.headerBg, theme.muted)}>
             <tr>
-              <th scope="col" className="px-4 py-3">
-                Hora
-              </th>
+              <th className="px-4 py-3">Hora</th>
+
               {showUserColumns && (
                 <>
-                  <th scope="col" className="px-4 py-3">
-                    Usuário
-                  </th>
-                  <th scope="col" className="px-4 py-3">
-                    E-mail
-                  </th>
+                  <th className="px-4 py-3">Usuário</th>
+                  <th className="px-4 py-3">E-mail</th>
                 </>
               )}
-              {showIds && (
-                <th scope="col" className="px-4 py-3">
-                  IDs
-                </th>
-              )}
-              <th scope="col" className="px-4 py-3">
-                Tipo
-              </th>
-              <th scope="col" className="px-4 py-3">
-                Tokens (entrada/saída/total)
-              </th>
-              <th scope="col" className="px-4 py-3">
-                Tempo de resposta
-              </th>
-              <th scope="col" className="px-4 py-3">
-                Prévia
-              </th>
-              <th scope="col" className="px-4 py-3">
-                Ações
-              </th>
+
+              {showIds && <th className="px-4 py-3">IDs</th>}
+
+              <th className="px-4 py-3">Tipo</th>
+              <th className="px-4 py-3">Tokens (entrada/saída/total)</th>
+              <th className="px-4 py-3">Tempo de resposta</th>
+              <th className="px-4 py-3">Prévia</th>
+              <th className="px-4 py-3">Ações</th>
             </tr>
           </thead>
 
           <tbody>
             {items.map((it) => {
               const isOpen = expanded.has(it.interactionId);
-              const total = it.tokensInput + it.tokensOutput;
+              const totalTokens = it.tokensInput + it.tokensOutput;
               const detailsId = `interaction-details-${it.interactionId}`;
 
               return (
                 <React.Fragment key={it.interactionId}>
                   <tr className={cn("align-top border-t", theme.rowBorder)}>
-                    {/* Time */}
                     <td className={cn("px-4 py-3 font-mono text-xs", theme.textStrong)}>
                       {hhmm(it.timestamp)}
                     </td>
 
-                    {/* User columns - Admin only */}
                     {showUserColumns && (
                       <>
-                        <td className="px-4 py-3">
-                          <div className="text-xs font-medium">
-                            {it.userName ?? "—"}
-                          </div>
+                        <td className="px-4 py-3 text-xs font-medium">
+                          {it.userName ?? "—"}
                         </td>
-                        <td className="px-4 py-3">
-                          <div className={cn("text-xs", theme.muted)}>
-                            {it.userEmail ?? "—"}
-                          </div>
+                        <td className={cn("px-4 py-3 text-xs", theme.muted)}>
+                          {it.userEmail ?? "—"}
                         </td>
                       </>
                     )}
 
-                    {/* IDs */}
                     {showIds && (
-                      <td className="px-4 py-3">
-                        <div className="text-xs">interação: {it.interactionId}</div>
-                        <div className={cn("text-xs", theme.muted)}>sessão: {it.sessionId}</div>
+                      <td className="px-4 py-3 text-xs">
+                        <div>interação: {it.interactionId}</div>
+                        <div className={theme.muted}>sessão: {it.sessionId}</div>
                         {it.ideaId != null && (
-                          <div className={cn("text-xs", theme.muted)}>ideia: {it.ideaId}</div>
+                          <div className={theme.muted}>ideia: {it.ideaId}</div>
                         )}
                       </td>
                     )}
 
-                    {/* Type */}
                     <td className="px-4 py-3">
                       <span
                         className={cn(
@@ -180,30 +158,25 @@ export default function ChatMetricsTable ({
                       </span>
                     </td>
 
-                    {/* Tokens */}
-                    <td className="px-4 py-3">
-                      <div className="text-xs">
-                        {it.tokensInput} / {it.tokensOutput} /{" "}
-                        <span className="font-medium">{total}</span>
-                      </div>
+                    <td className="px-4 py-3 text-xs">
+                      {it.tokensInput} / {it.tokensOutput} /{" "}
+                      <span className="font-medium">{totalTokens}</span>
                     </td>
 
-                    {/* Response time */}
-                    <td className="px-4 py-3">
-                      <div className="text-xs">{formatMs(it.responseTimeMs)}</div>
+                    <td className="px-4 py-3 text-xs">
+                      {formatMs(it.responseTimeMs)}
                     </td>
 
-                    {/* Preview */}
-                    <td className="max-w-[420px] px-4 py-3">
-                      <div className="line-clamp-2 text-xs">
+                    <td className="max-w-[420px] px-4 py-3 text-xs">
+                      <div className="line-clamp-2">
                         <span className="font-medium">U:</span> {it.userMessage}
                       </div>
-                      <div className={cn("line-clamp-2 text-xs", theme.muted)}>
+
+                      <div className={cn("line-clamp-2", theme.muted)}>
                         <span className="font-medium">A:</span> {it.assistantMessage}
                       </div>
                     </td>
 
-                    {/* Actions */}
                     <td className="px-4 py-3">
                       <button
                         onClick={() => toggle(it.interactionId)}
@@ -241,7 +214,7 @@ export default function ChatMetricsTable ({
                             </div>
                             <pre
                               className={cn(
-                                "whitespace-pre-wrap break-words text-xs",
+                                "whitespace-pre-wrap wrap-break-word text-xs",
                                 theme.textStrong
                               )}
                             >
@@ -255,7 +228,7 @@ export default function ChatMetricsTable ({
                             </div>
                             <pre
                               className={cn(
-                                "whitespace-pre-wrap break-words text-xs",
+                                "whitespace-pre-wrap wrap-break-word text-xs",
                                 theme.textStrong
                               )}
                             >

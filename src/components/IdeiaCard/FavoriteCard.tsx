@@ -39,7 +39,6 @@ export default function FavoriteCard({
     setLoading(true);
 
     try {
-      // ✅ Força execução assíncrona, mas sem retornar Promise
       const maybePromise = onToggleFavorite?.(idea.id) as unknown;
       if (maybePromise instanceof Promise) {
         maybePromise.finally(() => {
