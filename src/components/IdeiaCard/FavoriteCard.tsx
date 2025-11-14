@@ -51,20 +51,22 @@ export default function FavoriteCard({
   };
 
   const headerRight = (
-    <button
-      aria-label="Desfavoritar"
-      className="opacity-100 transition-all-smooth p-1 hover:scale-110 cursor-pointer"
-      title="Remover dos favoritos"
-      onClick={handleClick}
-      disabled={loading}
-    >
-      {loading ? (
-        <Loader2 className="w-4 h-4 animate-spin text-red-500" />
-      ) : (
-        <Heart className="w-4 h-4 fill-red-500 text-red-500" />
-      )}
-    </button>
-  );
+  <button
+    aria-label={idea.isFavorite ? "Desfavoritar" : "Favoritar"}
+    className="opacity-100 transition-all-smooth p-1 hover:scale-110 cursor-pointer"
+    title={idea.isFavorite ? "Remover dos favoritos" : "Adicionar aos favoritos"}
+    onClick={handleClick}
+    disabled={loading}
+  >
+    {loading ? (
+      <Loader2 className="w-4 h-4 animate-spin text-red-500" />
+    ) : idea.isFavorite ? (
+      <Heart className="w-4 h-4 fill-red-500 text-red-500" />
+    ) : (
+      <Heart className="w-4 h-4 text-red-500" />
+    )}
+  </button>
+);
 
   return (
     <BaseIdeiaCard
