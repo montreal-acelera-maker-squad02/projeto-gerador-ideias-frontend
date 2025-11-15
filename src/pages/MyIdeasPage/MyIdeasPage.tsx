@@ -72,7 +72,7 @@ export default function MyIdeasPage() {
         const data = await ideaService.getMyIdeas(page - 1, PAGE_SIZE);
 
         if (!cancelled) {
-          setIdeas(data.ideas);
+          setIdeas(data.content);
           setTotalPages(data.totalPages);
         }
       } catch (err) {
