@@ -72,7 +72,7 @@ export default function MyIdeasPage() {
         const data = await ideaService.getMyIdeas(page - 1, PAGE_SIZE);
 
         if (!cancelled) {
-          setIdeas(data.ideas);
+          setIdeas(data.content);
           setTotalPages(data.totalPages);
         }
       } catch (err) {
@@ -96,12 +96,26 @@ export default function MyIdeasPage() {
   }, [page, filters]);
 
   // HANDLERS LOCAIS (frontend)
-  const handleToggleFavorite = (id: string) => {
+  const handleToggleFavorite = async (id: string) => {
+    let optimisticValue: boolean | null = null;
     setIdeas((prev) =>
-      prev.map((idea) =>
-        idea.id === id ? { ...idea, isFavorite: !idea.isFavorite } : idea
-      )
+      prev.map((idea) => {
+        if (idea.id !== id) return idea;
+        optimisticValue = !idea.isFavorite;
+        return { ...idea, isFavorite: optimisticValue };
+      })
     );
+
+    if (optimisticValue === null) return;
+
+    try {
+      await ideaService.toggleFavorite(id, optimisticValue);
+    } catch (err) {
+      console.error("Erro ao atualizar favorito:", err);
+      // Reverte a UI em caso de erro na API
+      const revertValue = !(optimisticValue ?? false);
+      setIdeas((prev) => prev.map((idea) => (idea.id === id ? { ...idea, isFavorite: revertValue } : idea)));
+    }
   };
 
   const handleDelete = (id: string) => {

@@ -190,8 +190,7 @@ export default function HistoryPage() {
     if (optimisticValue === null) return
 
     try {
-      await ideaService.toggleFavorite(id, optimisticValue)
-      updateFavoriteCache(id, optimisticValue)
+      await ideaService.toggleFavorite(id, optimisticValue);
     } catch (err) {
       console.error('Erro ao atualizar favorito:', err)
       const revertValue = !(optimisticValue ?? false)

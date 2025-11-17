@@ -2,6 +2,7 @@ import { apiFetch } from "@/lib/api";
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
 import { emitHistoryRefreshRequest } from "@/events/historyEvents";
 import { pushIdeaToCache } from "@/hooks/useIdeas";
+import { updateFavoriteCache } from "@/pages/History/favoritesCache";
 
 type IdeaApiResponse = {
   id: string | number;
@@ -19,7 +20,7 @@ type PageResponse<T> = {
   totalPages: number;
   size: number;
   number: number; 
-};
+}
 
 // Converte backend -> modelo do front
 function mapResponseToIdea(response: IdeaApiResponse): Idea {
@@ -31,7 +32,7 @@ function mapResponseToIdea(response: IdeaApiResponse): Idea {
     isFavorite: response.isFavorite ?? false,
     responseTime: response.executionTimeMs,
     context: response.context || "",
-    author: response.userName?.trim() || response.author?.trim() || undefined,
+    author: (response as any).userName?.trim() || (response as any).author?.trim() || undefined,
   };
 }
 
@@ -97,6 +98,9 @@ export const ideaService = {
       throw new Error((await res.text()) || "Erro ao atualizar favorito");
     }
 
+    // Centraliza a atualização do cache de favoritos
+    updateFavoriteCache(ideaId, isFavorite);
+
     emitHistoryRefreshRequest();
   },
 
@@ -104,5 +108,24 @@ export const ideaService = {
     const res = await apiFetch("/api/ideas/favorites")
     if (!res.ok) throw new Error("Erro ao buscar favoritos")
     return await res.json()
+  },
+
+  /**
+   * Busca todas as ideias criadas pelo usuário logado, de forma paginada.
+   */
+  async getMyIdeas(page: number, size: number): Promise<PageResponse<Idea>> {
+    const res = await apiFetch(`/api/ideas/my-ideas?page=${page}&size=${size}`);
+    if (!res.ok) {
+      const errorText = await res.text();
+      // Lança um erro com a mensagem do backend para facilitar a depuração
+      throw new Error(`Erro ao carregar minhas ideias: ${errorText}`);
+    }
+    
+    const pageData: PageResponse<IdeaApiResponse> = await res.json();
+
+    return {
+      ...pageData,
+      content: pageData.content.map(mapResponseToIdea),
+    };
   }
 }

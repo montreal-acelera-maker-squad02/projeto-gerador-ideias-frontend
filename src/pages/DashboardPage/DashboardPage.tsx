@@ -36,30 +36,36 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({ ideas = [] }) => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const fetchDashboardStats = useCallback(async () => {
+  const fetchDashboardStats = useCallback(async (options?: { silent?: boolean }) => {
+    // Não mostra o indicador de "carregando" para atualizações silenciosas em segundo plano
+    if (!options?.silent) {
+      setIsLoading(true);
+    }
     try {
       const dashboardStats = await statsService.getStats();
       setStats(dashboardStats);
     } catch (e: unknown) {
       console.error("Falha ao buscar estatísticas do dashboard:", e);
-      setStats({ totalIdeas: 0, totalFavorites: 0, averageResponseTime: 0 });
+      // Em caso de erro, mantém os dados antigos se existirem, para não zerar a tela.
+      if (!stats) {
+        setStats({ totalIdeas: 0, totalFavorites: 0, averageResponseTime: 0 });
+      }
     } finally {
-      setIsLoading((loading) => {
-        return loading ? false : loading;
-      });
+      setIsLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    setIsLoading(true);
     fetchDashboardStats();
-    const unsubscribe = subscribeHistoryRefresh(fetchDashboardStats);
+    // Atualiza silenciosamente quando um evento de refresh é recebido
+    const unsubscribe = subscribeHistoryRefresh(() => fetchDashboardStats({ silent: true }));
 
     return () => unsubscribe();
   }, [fetchDashboardStats]);
 
   useEffect(() => {
-    const handleFocus = () => fetchDashboardStats();
+    // Atualiza silenciosamente quando o usuário volta para a aba
+    const handleFocus = () => fetchDashboardStats({ silent: true });
     window.addEventListener('focus', handleFocus);
 
     return () => window.removeEventListener('focus', handleFocus);

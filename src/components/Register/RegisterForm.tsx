@@ -79,26 +79,24 @@ export const RegisterForm: React.FC = () => {
     setLoading(true);
 
     try {
-      await authService.register(
+      const registerData = await authService.register(
         form.name,
         form.email,
         form.password,
         form.confirmPassword
       );
 
-      const loginData = await authService.login(form.email, form.password);
-
-      if (loginData?.accessToken && loginData?.refreshToken) {
-        setAuthTokens(loginData.accessToken, loginData.refreshToken);
+      if (registerData?.accessToken && registerData?.refreshToken) {
+        setAuthTokens(registerData.accessToken, registerData.refreshToken);
       } else {
         throw new Error("Falha ao obter tokens após registro. Tente fazer login manualmente.");
       }
 
-      if (loginData?.name || loginData?.email) {
+      if (registerData?.name || registerData?.email) {
         const userData = {
-          uuid: loginData.uuid,
-          name: loginData.name,
-          email: loginData.email,
+          uuid: registerData.uuid,
+          name: registerData.name,
+          email: registerData.email,
         };
         localStorage.setItem("user", JSON.stringify(userData));
       }

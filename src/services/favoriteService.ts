@@ -1,5 +1,6 @@
 import { apiFetch } from "@/lib/api";
 import type { Idea } from "@/components/IdeiaCard/BaseIdeiaCard";
+import { ideaService } from "./ideaService";
 
 export const favoriteService = {
   async getFavorites(page = 0, size = 20): Promise<Idea[]> {
@@ -19,11 +20,7 @@ export const favoriteService = {
   },
 
   async removeFavorite(id: string): Promise<void> {
-    try {
-      await apiFetch(`/api/ideas/${id}/favorite`, { method: "DELETE" });
-    } catch (error) {
-      console.error("Erro ao desfavoritar:", error);
-      throw error;
-    }
+    // Reutiliza a lógica centralizada que já emite o evento de refresh
+    return ideaService.toggleFavorite(id, false);
   }
 };
