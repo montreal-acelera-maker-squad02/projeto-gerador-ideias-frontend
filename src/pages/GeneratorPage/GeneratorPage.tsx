@@ -110,6 +110,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
 
     setIsLoading(true);
     setError(null);
+    setCurrentIdea(null);
 
     const isSurprise = !!themeIdOverride;
     const skipCache = hasGenerated || isSurprise;
@@ -121,17 +122,21 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
         contextToUse,
         skipCache
       );
-      if (newIdea.content.includes(INAPPROPRIATE_CONTENT)) {
-        setError(INAPPROPRIATE_CONTENT);
-        setHasGenerated(false);
-      } else {
-        setCurrentIdea(newIdea);
-        setIdeas((prev) => [newIdea, ...prev]);
-        setHasGenerated(true);
-      }
+
+      setCurrentIdea(newIdea);
+      setIdeas((prev) => [newIdea, ...prev]);
+      setHasGenerated(true);
+
     } catch (err: unknown) {
       console.error("Falha ao gerar ideia:", err);
-      setError(FRIENDLY_ERROR);
+      const errorMessage = (err instanceof Error) ? err.message : String(err);
+
+      if (errorMessage.includes(INAPPROPRIATE_CONTENT)) {
+        setError(INAPPROPRIATE_CONTENT);
+      } else {
+        setError(errorMessage.startsWith("Erro HTTP") ? FRIENDLY_ERROR : errorMessage);
+      }
+      setHasGenerated(false);
     } finally {
       setIsLoading(false);
     }
@@ -378,7 +383,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center justify-center gap-4 mt-6 flex-wrap">
               <button
                 onClick={() => generateIdea()}
@@ -422,7 +427,7 @@ export const GeneratorPage: React.FC<GeneratorPageProps> = ({
             >
               Resultado
             </h2>
-             {error ? (
+            {error ? (
               <div className="animate-fadeIn">
                 <GeneratorErrorCard
                   error={error}
