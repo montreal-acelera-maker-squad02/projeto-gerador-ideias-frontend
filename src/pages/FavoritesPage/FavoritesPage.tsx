@@ -29,6 +29,7 @@ export default function FavoritesPage() {
         await favoriteService.removeFavorite(id);
         setIdeas((prev) => prev.filter((idea) => idea.id !== id));
 
+        // Ajusta página se ficar vazia
         setPage((prev) => {
           const totalAfter = ideas.length - 1;
           const maxPage = Math.max(1, Math.ceil(totalAfter / PAGE_SIZE));
@@ -104,25 +105,26 @@ export default function FavoritesPage() {
         ))}
       </div>
 
-      {/* ==================== PAGINAÇÃO ESTILO PREMIUM ===================== */}
+      {/* ==================== PAGINAÇÃO ESTILO COMUNIDADE ===================== */}
       {totalPages > 1 && (
         <div className="flex justify-center mt-10">
           <div
             className={cn(
-              "flex items-center gap-1 px-3 py-2 rounded-xl shadow-sm border",
+              "flex items-center overflow-hidden rounded-xl border shadow-sm",
               darkMode
-                ? "bg-slate-900/70 border-slate-700"
-                : "bg-white border-gray-300"
+                ? "bg-slate-900/60 border-slate-700"
+                : "bg-white border-gray-200"
             )}
           >
-            {/* PRIMEIRA PÁGINA « */}
+            {/* PRIMEIRA « */}
             <button
               onClick={() => setPage(1)}
               disabled={page === 1}
               className={cn(
-                "px-3 py-2 rounded-lg text-sm font-medium",
+                "px-4 py-2 text-sm transition-colors border-r",
+                darkMode ? "border-slate-700" : "border-gray-200",
                 page === 1
-                  ? "opacity-30 cursor-not-allowed"
+                  ? "opacity-40 cursor-not-allowed"
                   : darkMode
                   ? "hover:bg-slate-800"
                   : "hover:bg-gray-100"
@@ -136,9 +138,10 @@ export default function FavoritesPage() {
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
               className={cn(
-                "px-3 py-2 rounded-lg text-sm font-medium",
+                "px-4 py-2 text-sm transition-colors border-r",
+                darkMode ? "border-slate-700" : "border-gray-200",
                 page === 1
-                  ? "opacity-30 cursor-not-allowed"
+                  ? "opacity-40 cursor-not-allowed"
                   : darkMode
                   ? "hover:bg-slate-800"
                   : "hover:bg-gray-100"
@@ -147,24 +150,28 @@ export default function FavoritesPage() {
               ‹
             </button>
 
+            {/* Página atual — azul claro igual comunidade */}
             <span
               className={cn(
-                "px-4 py-2 rounded-lg font-semibold text-sm",
+                "px-5 py-2 text-sm font-semibold border-r",
+                darkMode ? "border-slate-700" : "border-gray-200",
                 darkMode
-                  ? "bg-teal-700 text-white"
-                  : "bg-teal-700 text-white"
+                  ? "bg-slate-800 text-blue-400"
+                  : "bg-[#E9F1FF] text-[#1F6FEB]"
               )}
             >
               {page}
             </span>
 
+            {/* PRÓXIMA › */}
             <button
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
               className={cn(
-                "px-3 py-2 rounded-lg text-sm font-medium",
+                "px-4 py-2 text-sm transition-colors border-r",
+                darkMode ? "border-slate-700" : "border-gray-200",
                 page === totalPages
-                  ? "opacity-30 cursor-not-allowed"
+                  ? "opacity-40 cursor-not-allowed"
                   : darkMode
                   ? "hover:bg-slate-800"
                   : "hover:bg-gray-100"
@@ -173,13 +180,14 @@ export default function FavoritesPage() {
               ›
             </button>
 
+            {/* ÚLTIMA » */}
             <button
               onClick={() => setPage(totalPages)}
               disabled={page === totalPages}
               className={cn(
-                "px-3 py-2 rounded-lg text-sm font-medium",
+                "px-4 py-2 text-sm transition-colors",
                 page === totalPages
-                  ? "opacity-30 cursor-not-allowed"
+                  ? "opacity-40 cursor-not-allowed"
                   : darkMode
                   ? "hover:bg-slate-800"
                   : "hover:bg-gray-100"
@@ -190,6 +198,7 @@ export default function FavoritesPage() {
           </div>
         </div>
       )}
+      {/* =================================================================== */}
     </div>
   );
 
