@@ -209,7 +209,24 @@ function ensureIdeaId(payload: Record<string, any>): string {
       return str
     }
   }
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+  return generateSecureIdeaId()
+}
+
+function generateSecureIdeaId() {
+  const cryptoObj = globalThis.crypto ?? (globalThis as any).msCrypto
+  if (cryptoObj?.randomUUID) {
+    return cryptoObj.randomUUID()
+  }
+
+  if (cryptoObj?.getRandomValues) {
+    const bytes = new Uint8Array(16)
+    cryptoObj.getRandomValues(bytes)
+    return Array.from(bytes)
+      .map((value) => value.toString(16).padStart(2, "0"))
+      .join("")
+  }
+
+  throw new Error("Unable to generate secure idea ID")
 }
 
 function pickAuthorFromPayload(payload: Record<string, any>): string | undefined {

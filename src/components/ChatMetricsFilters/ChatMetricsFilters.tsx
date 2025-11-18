@@ -119,7 +119,7 @@ export default function ChatMetricsFilters({
             }
           >
             <SlidersHorizontal className="h-4 w-4" />
-            {compare ? "Comparar " : "Comparar "}
+            {compare ? "Comparando" : "Comparar"}
           </button>
         );
       })()}
