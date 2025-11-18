@@ -59,7 +59,14 @@ describe('RegisterForm', () => {
   })
 
   it('submete com sucesso e redireciona para o login', async () => {
-    registerMock.mockResolvedValueOnce({ id: 'user-1' } as any)
+    registerMock.mockResolvedValueOnce({
+      id: 'user-1',
+      accessToken: 'access-123',
+      refreshToken: 'refresh-abc',
+      uuid: 'user-1',
+      name: 'User Teste',
+      email: 'user@example.com',
+    } as any)
     renderWithProviders(<RegisterForm />)
 
     const user = await fillForm('user@example.com')

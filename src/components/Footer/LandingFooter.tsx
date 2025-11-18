@@ -10,6 +10,7 @@ export function LandingFooter() {
         {/* Brand e Contexto */}
         <div className="max-w-sm">
           <img src={creaitorName} alt="Logo do Criaitor" className="mt-3 h-10 w-auto object-contain md:h-12" />
+          <p className="mt-2 text-lg font-semibold text-foreground">Criaitor</p>
 
           <p className="mt-2 text-sm text-muted-foreground">
             Aplicação web desenvolvida pelo time Acelera Maker da Montreal para geração de ideias criativas com IA local (Ollama).

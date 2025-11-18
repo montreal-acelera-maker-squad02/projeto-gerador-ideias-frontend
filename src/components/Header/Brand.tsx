@@ -32,7 +32,7 @@ export const Brand: React.FC<BrandProps> = ({ className, onClick }) => {
 
   return (
     <button
-      onClick={() => handleClick}
+      onClick={handleClick}
       className="flex items-center gap-3 cursor-pointer bg-transparent border-none outline-none focus:ring-2 focus:ring-blue-500 rounded transition"
       aria-label="Voltar para a página inicial"
     >
