@@ -20,7 +20,6 @@ type PageResponse<T> = {
   number: number; 
 };
 
-// Converte backend -> modelo do front
 function mapResponseToIdea(response: IdeaApiResponse): Idea {
   return {
     id: String(response.id),
@@ -35,7 +34,6 @@ function mapResponseToIdea(response: IdeaApiResponse): Idea {
 
 export const ideaService = {
   
-  //   Gera nova ideia usando /generate
    
   async generateIdea(
     themeId: number,
@@ -60,7 +58,6 @@ export const ideaService = {
   },
 
   
-  //  * Gera ideia aleatória usando /surprise-me
    
   async generateSurpriseIdea(): Promise<Idea> {
     const response = await apiFetch("/api/ideas/surprise-me", {
@@ -77,7 +74,6 @@ export const ideaService = {
   },
 
   
-    // Favoritar / desfavoritar
    
   async toggleFavorite(ideaId: string, isFavorite: boolean): Promise<void> {
     const method = isFavorite ? "POST" : "DELETE";
