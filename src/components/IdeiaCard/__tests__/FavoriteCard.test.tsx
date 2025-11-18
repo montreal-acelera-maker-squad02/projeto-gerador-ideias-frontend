@@ -26,6 +26,11 @@ const mockIdea: BaseIdeaCardProps['idea'] = {
   isFavorite: false,
   responseTime: 123,
 }
+const favoritedIdea: BaseIdeaCardProps['idea'] = {
+  ...mockIdea,
+  id: 'fav-1',
+  isFavorite: true,
+}
 
 describe('FavoriteCard', () => {
   it('renderiza corretamente as informações do card', () => {
@@ -39,14 +44,14 @@ describe('FavoriteCard', () => {
     const user = userEvent.setup()
     const onToggleFavorite = vi.fn()
 
-    renderWithProviders(<FavoriteCard idea={mockIdea} onToggleFavorite={onToggleFavorite} />)
+    renderWithProviders(<FavoriteCard idea={favoritedIdea} onToggleFavorite={onToggleFavorite} />)
 
     const button = screen.getByRole('button', { name: /desfavoritar/i })
 
     await user.click(button)
 
     await waitFor(() => {
-      expect(onToggleFavorite).toHaveBeenCalledWith(mockIdea.id)
+      expect(onToggleFavorite).toHaveBeenCalledWith(favoritedIdea.id)
       expect(onToggleFavorite).toHaveBeenCalledTimes(1)
     })
   })
@@ -55,7 +60,7 @@ describe('FavoriteCard', () => {
     const user = userEvent.setup()
     const onToggleFavorite = vi.fn(() => new Promise(res => setTimeout(res, 200)))
 
-    renderWithProviders(<FavoriteCard idea={mockIdea} onToggleFavorite={onToggleFavorite} />)
+    renderWithProviders(<FavoriteCard idea={favoritedIdea} onToggleFavorite={onToggleFavorite} />)
     const button = screen.getByRole('button', { name: /desfavoritar/i })
 
     await user.click(button)

@@ -79,14 +79,16 @@ describe('HistoryPage', () => {
 
     await renderHistoryPage()
     await screen.findByTestId('history-card-1')
-    expect(screen.queryByTestId('history-card-6')).not.toBeInTheDocument()
+    expect(screen.getByTestId('history-card-6')).toBeInTheDocument()
 
     const firstCallProps = CommunityIdeaCardMock.mock.calls[0][0]
     expect(typeof firstCallProps.onToggleFavorite).toBe('function')
 
     await user.click(screen.getByRole('button', { name: /proxima pagina/i }))
-    await screen.findByTestId('history-card-6')
+    await screen.findByTestId('history-card-7')
     expect(screen.queryByTestId('history-card-1')).not.toBeInTheDocument()
+    expect(screen.queryByTestId('history-card-6')).not.toBeInTheDocument()
+    expect(screen.getByTestId('history-card-7')).toBeInTheDocument()
     expect(screen.getByText('2')).toBeInTheDocument()
   })
 
