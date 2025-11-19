@@ -47,7 +47,7 @@ jobs:
 
           cd $BACKEND_DIR
 
-          & $PM2_PATH startOrRestart ecosystem.config.js --name CriaitorFrontend
+          & $PM2_PATH startOrRestart ecosystem.config.js --only CriaitorFrontend
           & $PM2_PATH save
 
           echo "Frontend Deployment successful."
