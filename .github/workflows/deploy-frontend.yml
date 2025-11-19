@@ -27,7 +27,7 @@ jobs:
         run: npm run build
 
       - name: Deploy Local PM2 Restart
-        shell: pwsh
+        shell: powershell
         run: |
           echo "Deploying Frontend to VM..."
           
@@ -38,11 +38,11 @@ jobs:
           echo "Removendo pasta 'dist' antiga..."
           Remove-Item -Path "$FRONTEND_DIR/dist" -Recurse -Force -ErrorAction SilentlyContinue
           
-          cp -r $GITHUB_WORKSPACE/dist $FRONTEND_DIR/
+          Copy-Item -Path "$env:GITHUB_WORKSPACE/dist" -Destination "$FRONTEND_DIR/" -Recurse -Force
           
           cd $BACKEND_DIR
           
-          & $PM2_PATH startOrRestart ecosystem.config.js --only CriaitorFrontend
-          & $PM2_PATH save
+          & "$PM2_PATH" startOrRestart ecosystem.config.js --only CriaitorFrontend
+          & "$PM2_PATH" save
           
           echo "Frontend Deployment successful."
