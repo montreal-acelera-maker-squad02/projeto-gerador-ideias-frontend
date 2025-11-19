@@ -137,7 +137,8 @@ export default function HistoryPage() {
   useEffect(() => {
     const unsubscribe = subscribeHistoryRefresh((detail) => {
       if (detail.idea) {
-        setIdeas((current) => mergeIdeas([detail.idea], current))
+        const detailIdea = detail.idea
+        setIdeas((current) => mergeIdeas([detailIdea], current))
       }
       refetch({ ignoreCache: true })
     })

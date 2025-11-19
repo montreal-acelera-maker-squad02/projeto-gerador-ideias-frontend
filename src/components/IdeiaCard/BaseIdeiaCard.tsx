@@ -195,12 +195,12 @@ export default memo(function BaseIdeaCard({
   const rightNode =
     footerRight ??
     getRightNode({
-      actions,
+      actions: actions ?? "none",
       idea,
       darkMode,
       onToggleFavorite,
-      handleCopy,
-      handleShare,
+      onCopy: handleCopy,
+      onShare: handleShare,
     });
 
   // actions node
@@ -272,7 +272,7 @@ export default memo(function BaseIdeaCard({
 });
 
 type RightNodeArgs = {
-  actions: "none" | "full"
+  actions: ActionsKind
   idea: Idea
   darkMode: boolean
   onToggleFavorite?: (id: string) => void
