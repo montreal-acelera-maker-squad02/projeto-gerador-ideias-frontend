@@ -1,12 +1,20 @@
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
+﻿import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  type Dispatch,
+  type ReactNode,
+  type SetStateAction,
+} from 'react'
 import FilterHistory, { type FilterHistoryOption } from '@/components/FilterHistory'
 import type { Idea } from '@/components/IdeiaCard/BaseIdeiaCard'
 import { useIdeas } from '@/hooks/useIdeas'
 import { useTheme } from '@/hooks/useTheme'
 import { cn } from '@/lib/utils'
 import { ideaService } from '@/services/ideaService'
-import { subscribeHistoryRefresh, type HistoryRefreshEventDetail } from '@/events/historyEvents'
-import { fetchFavoriteIds, updateFavoriteCache } from './favoritesCache'
+import { subscribeHistoryRefresh } from '@/events/historyEvents'
+import { fetchFavoriteIds } from './favoritesCache'
 import CommunityIdeaCard, { type CommunityIdea } from '@/components/IdeiaCard/CommunityIdeaCard'
 import { themeService, type Theme } from '@/services/themeService'
 
@@ -33,9 +41,9 @@ export default function HistoryPage() {
 
   const [themeOptions, setThemeOptions] = useState<FilterHistoryOption[]>(FALLBACK_THEME_OPTIONS)
   const initialIdeas = useMemo(() => {
-    if (typeof window === 'undefined') return []
+    if (typeof globalThis === 'undefined') return []
     try {
-      const raw = window.localStorage.getItem(HISTORY_CACHE_KEY)
+      const raw = globalThis.localStorage?.getItem(HISTORY_CACHE_KEY)
       if (!raw) return []
       const parsed = JSON.parse(raw) as Array<Omit<Idea, 'timestamp'> & { timestamp: string }>
       return parsed.map((idea) => ({
@@ -69,30 +77,9 @@ export default function HistoryPage() {
 
   useEffect(() => {
     let cancelled = false
+    const loadThemes = createThemeLoader(setThemeOptions, () => cancelled)
 
-    async function loadThemes() {
-      if (import.meta.env.MODE === 'test') {
-        setThemeOptions(FALLBACK_THEME_OPTIONS)
-        return
-      }
-      try {
-        const remoteThemes = await themeService.getAll()
-        if (cancelled) return
-        if (Array.isArray(remoteThemes) && remoteThemes.length > 0) {
-          const normalized = buildThemeOptions(remoteThemes)
-          setThemeOptions([{ label: 'Todas', value: '' }, ...normalized])
-        } else {
-          setThemeOptions(FALLBACK_THEME_OPTIONS)
-        }
-      } catch (error) {
-        console.error('Erro ao carregar temas:', error)
-        if (!cancelled) {
-          setThemeOptions(FALLBACK_THEME_OPTIONS)
-        }
-      }
-    }
-
-    loadThemes()
+    void loadThemes()
     return () => {
       cancelled = true
     }
@@ -103,23 +90,7 @@ export default function HistoryPage() {
     setIdeas((current) => mergeIdeas(ideasData, current))
 
     let cancelled = false
-
-    async function syncFavorites() {
-      try {
-        const favoriteIds = await fetchFavoriteIds()
-        if (cancelled) return
-        setIdeas((current) =>
-          current.map((idea) => ({
-            ...idea,
-            isFavorite: favoriteIds.has(idea.id),
-          }))
-        )
-      } catch (err) {
-        if (!cancelled) {
-          console.error('Erro ao sincronizar favoritos:', err)
-        }
-      }
-    }
+    const syncFavorites = createFavoritesSync(setIdeas, () => cancelled)
 
     void syncFavorites()
 
@@ -133,32 +104,41 @@ export default function HistoryPage() {
   }, [filters.category, filters.startDate, filters.endDate])
 
   useEffect(() => {
-    if (typeof window === 'undefined' || !Number.isFinite(HISTORY_POLL_INTERVAL) || HISTORY_POLL_INTERVAL <= 0) {
+    if (
+      typeof globalThis === 'undefined' ||
+      !Number.isFinite(HISTORY_POLL_INTERVAL) ||
+      HISTORY_POLL_INTERVAL <= 0 ||
+      typeof globalThis.setInterval !== 'function' ||
+      typeof globalThis.clearInterval !== 'function'
+    ) {
       return
     }
-    const intervalId = window.setInterval(() => {
+    const intervalId = globalThis.setInterval(() => {
       refetch({ ignoreCache: true, silent: true })
     }, HISTORY_POLL_INTERVAL)
-    return () => window.clearInterval(intervalId)
+    return () => globalThis.clearInterval(intervalId)
   }, [refetch])
 
   useEffect(() => {
-    if (typeof document === 'undefined') {
-      return
-    }
+    if (typeof globalThis === 'undefined') return
+    const target = globalThis.document
+    if (!target) return
+
     const handleVisibility = () => {
-      if (document.visibilityState === 'visible') {
+      if (target.visibilityState === 'visible') {
         refetch({ ignoreCache: true, silent: true })
       }
     }
-    document.addEventListener('visibilitychange', handleVisibility)
-    return () => document.removeEventListener('visibilitychange', handleVisibility)
+
+    target.addEventListener('visibilitychange', handleVisibility)
+    return () => target.removeEventListener('visibilitychange', handleVisibility)
   }, [refetch])
 
   useEffect(() => {
     const unsubscribe = subscribeHistoryRefresh((detail) => {
       if (detail.idea) {
-        setIdeas((current) => mergeIdeas([detail.idea], current))
+        const detailIdea = detail.idea
+        setIdeas((current) => mergeIdeas([detailIdea], current))
       }
       refetch({ ignoreCache: true })
     })
@@ -166,13 +146,13 @@ export default function HistoryPage() {
   }, [refetch])
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
+    if (typeof globalThis === 'undefined' || !globalThis.localStorage) return
     try {
       const serializable = ideas.map((idea) => ({
         ...idea,
         timestamp: idea.timestamp instanceof Date ? idea.timestamp.toISOString() : idea.timestamp,
       }))
-      window.localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(serializable))
+      globalThis.localStorage.setItem(HISTORY_CACHE_KEY, JSON.stringify(serializable))
     } catch (error) {
       console.warn('Falha ao salvar cache do historico', error)
     }
@@ -217,6 +197,62 @@ export default function HistoryPage() {
   const paginated = filtered.slice(start, start + pageSize)
   const hasIdeas = filtered.length > 0
 
+  const paginationButtons = [
+    {
+      key: 'first',
+      label: '\u00AB',
+      ariaLabel: 'Primeira pagina',
+      onClick: () => setPage(1),
+      disabled: currentPage <= 1,
+      hasBorder: false,
+    },
+    {
+      key: 'prev',
+      label: '\u2039',
+      ariaLabel: 'Pagina anterior',
+      onClick: () => setPage((p) => Math.max(1, p - 1)),
+      disabled: currentPage <= 1,
+      hasBorder: true,
+    },
+    {
+      key: 'next',
+      label: '\u203A',
+      ariaLabel: 'Proxima pagina',
+      onClick: () => setPage((p) => Math.min(totalPages, p + 1)),
+      disabled: currentPage >= totalPages,
+      hasBorder: true,
+    },
+    {
+      key: 'last',
+      label: '\u00BB',
+      ariaLabel: 'Ultima pagina',
+      onClick: () => setPage(totalPages),
+      disabled: currentPage >= totalPages,
+      hasBorder: true,
+    },
+  ]
+
+  const paginationButtonClass = (hasBorder: boolean, disabled: boolean) => {
+    let colorClass: string
+
+    if (darkMode) {
+      colorClass = hasBorder
+        ? 'border-slate-700 text-slate-200 hover:bg-slate-800'
+        : 'text-slate-200 hover:bg-slate-800'
+    } else {
+      colorClass = hasBorder
+        ? 'border-gray-300 text-gray-700 hover:bg-gray-100'
+        : 'text-gray-700 hover:bg-gray-100'
+    }
+
+    return cn(
+      'px-3 py-1.5 text-sm transition-colors',
+      hasBorder && 'border-l',
+      colorClass,
+      disabled && 'opacity-40 cursor-not-allowed'
+    )
+  }
+
   const loadingClass = cn(
     'rounded-lg border p-6 text-sm h-32 flex items-center justify-center',
     darkMode ? 'bg-slate-900 border-slate-800 text-slate-200' : 'bg-white border-gray-200 text-gray-600'
@@ -226,17 +262,17 @@ export default function HistoryPage() {
 
   if (ideasLoading) {
     cardsContent = <div className={loadingClass}>Carregando ideias da comunidade...</div>
-  } else if (!hasIdeas) {
-    cardsContent = (
-      <div className={loadingClass}>Nenhuma ideia encontrada para os filtros selecionados.</div>
-    )
-  } else {
+  } else if (hasIdeas) {
     cardsContent = (
       <div className="grid gap-6 justify-items-center sm:grid-cols-[repeat(2,minmax(0,640px))]">
         {paginated.map((idea) => (
           <CommunityIdeaCard key={idea.id} idea={toCommunityIdea(idea)} onToggleFavorite={handleToggleFavorite} />
         ))}
       </div>
+    )
+  } else {
+    cardsContent = (
+      <div className={loadingClass}>Nenhuma ideia encontrada para os filtros selecionados.</div>
     )
   }
 
@@ -262,7 +298,7 @@ export default function HistoryPage() {
           <div className="flex flex-col gap-2">
             <h1 className="text-3xl font-semibold">Ideias da Comunidade</h1>
             <p className={cn('text-base', darkMode ? 'text-slate-300' : 'text-gray-600')}>
-              Acompanhe as contribuicoes mais recentes e favorite o que achar interessante.
+              Acompanhe as contribuições mais recentes e favorite o que achar interessante.
             </p>
           </div>
           {cardsContent}
@@ -276,32 +312,17 @@ export default function HistoryPage() {
                   darkMode ? 'border border-slate-700 bg-slate-900' : 'border border-gray-300 bg-white shadow-sm'
                 )}
               >
-                <button
-                  aria-label="Primeira pagina"
-                  onClick={() => setPage(1)}
-                  disabled={currentPage <= 1}
-                  className={cn(
-                    'px-3 py-1.5 text-sm transition-colors',
-                    darkMode ? 'text-slate-200 hover:bg-slate-800' : 'text-gray-700 hover:bg-gray-100',
-                    currentPage <= 1 && 'opacity-40 cursor-not-allowed'
-                  )}
-                >
-                  {'\u00AB'}
-                </button>
-                <button
-                  aria-label="Pagina anterior"
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  disabled={currentPage <= 1}
-                  className={cn(
-                    'px-3 py-1.5 text-sm border-l',
-                    darkMode
-                      ? 'border-slate-700 text-slate-200 hover:bg-slate-800'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-100',
-                    currentPage <= 1 && 'opacity-40 cursor-not-allowed'
-                  )}
-                >
-                  {'\u2039'}
-                </button>
+                {paginationButtons.slice(0, 2).map((button) => (
+                  <button
+                    key={button.key}
+                    aria-label={button.ariaLabel}
+                    onClick={button.onClick}
+                    disabled={button.disabled}
+                    className={paginationButtonClass(button.hasBorder, button.disabled)}
+                  >
+                    {button.label}
+                  </button>
+                ))}
                 <span
                   className={cn(
                     'px-4 py-1.5 text-sm font-semibold border-l',
@@ -310,34 +331,17 @@ export default function HistoryPage() {
                 >
                   {currentPage}
                 </span>
-                <button
-                  aria-label="Proxima pagina"
-                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
-                  disabled={currentPage >= totalPages}
-                  className={cn(
-                    'px-3 py-1.5 text-sm border-l',
-                    darkMode
-                      ? 'border-slate-700 text-slate-200 hover:bg-slate-800'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-100',
-                    currentPage >= totalPages && 'opacity-40 cursor-not-allowed'
-                  )}
-                >
-                  {'\u203A'}
-                </button>
-                <button
-                  aria-label="Ultima pagina"
-                  onClick={() => setPage(totalPages)}
-                  disabled={currentPage >= totalPages}
-                  className={cn(
-                    'px-3 py-1.5 text-sm border-l',
-                    darkMode
-                      ? 'border-slate-700 text-slate-200 hover:bg-slate-800'
-                      : 'border-gray-300 text-gray-700 hover:bg-gray-100',
-                    currentPage >= totalPages && 'opacity-40 cursor-not-allowed'
-                  )}
-                >
-                  {'\u00BB'}
-                </button>
+                {paginationButtons.slice(2).map((button) => (
+                  <button
+                    key={button.key}
+                    aria-label={button.ariaLabel}
+                    onClick={button.onClick}
+                    disabled={button.disabled}
+                    className={paginationButtonClass(button.hasBorder, button.disabled)}
+                  >
+                    {button.label}
+                  </button>
+                ))}
               </nav>
             </div>
           )}
@@ -345,6 +349,60 @@ export default function HistoryPage() {
       </div>
     </div>
   )
+}
+
+type CancelChecker = () => boolean
+
+function createThemeLoader(
+  setThemeOptions: Dispatch<SetStateAction<FilterHistoryOption[]>>,
+  isCancelled: CancelChecker
+): () => Promise<void> {
+  return async () => {
+    if (import.meta.env.MODE === 'test') {
+      setThemeOptions(FALLBACK_THEME_OPTIONS)
+      return
+    }
+
+    try {
+      const remoteThemes = await themeService.getAll()
+      if (isCancelled()) return
+
+      if (Array.isArray(remoteThemes) && remoteThemes.length > 0) {
+        const normalized = buildThemeOptions(remoteThemes)
+        setThemeOptions([{ label: 'Todas', value: '' }, ...normalized])
+      } else {
+        setThemeOptions(FALLBACK_THEME_OPTIONS)
+      }
+    } catch (error) {
+      console.error('Erro ao carregar temas:', error)
+      if (!isCancelled()) {
+        setThemeOptions(FALLBACK_THEME_OPTIONS)
+      }
+    }
+  }
+}
+
+function createFavoritesSync(
+  setIdeas: Dispatch<SetStateAction<Idea[]>>,
+  isCancelled: CancelChecker
+): () => Promise<void> {
+  return async () => {
+    try {
+      const favoriteIds = await fetchFavoriteIds()
+      if (isCancelled()) return
+
+      setIdeas((current) =>
+        current.map((idea) => ({
+          ...idea,
+          isFavorite: favoriteIds.has(idea.id),
+        }))
+      )
+    } catch (err) {
+      if (!isCancelled()) {
+        console.error('Erro ao sincronizar favoritos:', err)
+      }
+    }
+  }
 }
 
 function toCommunityIdea(idea: Idea): CommunityIdea {
@@ -358,13 +416,13 @@ function toCommunityIdea(idea: Idea): CommunityIdea {
 function buildThemeOptions(themes: Theme[]): FilterHistoryOption[] {
   const seen = new Set<string>()
   const normalized: FilterHistoryOption[] = []
-  themes.forEach((theme) => {
+  for (const theme of themes) {
     const option = toThemeOption(theme)
     const key = option.value.toLowerCase()
-    if (seen.has(key)) return
+    if (seen.has(key)) continue
     seen.add(key)
     normalized.push(option)
-  })
+  }
   return normalized
 }
 
@@ -407,11 +465,11 @@ function mergeIdeas(incoming: Idea[], current: Idea[]): Idea[] {
   })
 
   const newIdeas: Idea[] = []
-  incoming.forEach((idea) => {
+  for (const idea of incoming) {
     if (!currentMap.has(idea.id)) {
       newIdeas.push(idea)
     }
-  })
+  }
 
   if (newIdeas.length === 0 && !hasUpdates) {
     return current
