@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - main
+    paths:
+      - "**"
+      - ".github/workflows/deploy-frontend.yml"
 
 jobs:
   build-and-deploy:
@@ -21,27 +24,30 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run Build
+      - name: Build Frontend
         run: npm run build
 
-      - name: Deploy Frontend with PM2
+      - name: Deploy Frontend via PM2
         shell: powershell
         run: |
           echo "Deploying Frontend..."
 
-          $FRONTEND_DIR = "E:/actions-runner-frontend/_work/projeto-gerador-ideias-frontend/projeto-gerador-ideias-frontend"
-          $BACKEND_DIR = "E:/actions-runner/_work/projeto-gerador-ideias-backend/projeto-gerador-ideias-backend"
-          $PM2_PATH = "C:\Users\marco.filho\AppData\Roaming\npm\pm2.ps1"
+          $FRONTEND_DIR = "E:/Criaitor/projeto-gerador-ideias-frontend"
+          $PM2 = "C:\Users\marco.filho\AppData\Roaming\npm\pm2.ps1"
+          $BUILD_SOURCE = "$env:GITHUB_WORKSPACE/dist"
 
           echo "Removendo dist antigo..."
-          Remove-Item -Path "$FRONTEND_DIR/dist" -Recurse -Force -ErrorAction SilentlyContinue
+          Remove-Item "$FRONTEND_DIR/dist" -Recurse -Force -ErrorAction SilentlyContinue
 
           echo "Copiando novo dist..."
-          Copy-Item -Path "$env:GITHUB_WORKSPACE/dist" -Destination "$FRONTEND_DIR/" -Recurse -Force
+          Copy-Item $BUILD_SOURCE "$FRONTEND_DIR/" -Recurse -Force
 
-          cd $BACKEND_DIR
+          echo "Reiniciando Frontend..."
+          & $PM2 restart CriaitorFrontend 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            & $PM2 start "E:/Criaitor/ecosystem.config.js" --only CriaitorFrontend
+          }
 
-          & $PM2_PATH startOrRestart "ecosystem.config.js" --only CriaitorFrontend
-          & $PM2_PATH save
+          & $PM2 save
 
           echo "Frontend deploy finalizado!"
