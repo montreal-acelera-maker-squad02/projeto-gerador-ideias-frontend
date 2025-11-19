@@ -1,50 +1,53 @@
 name: CI/CD - Deploy Frontend
 
 on:
-push:
-branches:
-- main
+  push:
+    branches:
+      - main
+    paths:
+      - "**"
+      - ".github/workflows/deploy-frontend.yml"
 
 jobs:
-build-and-deploy:
+  build-and-deploy:
+    runs-on: self-hosted
 
-runs-on: self-hosted
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-steps:
-  - name: Checkout Code
-    uses: actions/checkout@v4
+      - name: Setup Node.js 20.x
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
 
-  - name: Setup Node.js 20.x
-    uses: actions:setup-node@v4
-    with:
-      node-version: '20.x'
-      cache: 'npm'
-      cache-dependency-path: '**/package-lock.json'
-      
-  - name: Install Dependencies
-    run: npm install 
+      - name: Install Dependencies
+        run: npm install
 
-  - name: Run Build (Generate 'dist')
-    run: npm run build 
+      - name: Build Frontend
+        run: npm run build
 
-  - name: Deploy Local PM2 Restart
-    run: |
-      echo "Deploying Frontend to VM..."
-      
-      # --- Definição dos Caminhos ---
-      $FRONTEND_DIR = "E:/Criaitor/projeto-gerador-ideias-frontend"
-      $BACKEND_DIR = "E:/Criaitor/projeto-gerador-ideias-backend"
-      $PM2_PATH = "C:\Users\marco.filho\AppData\Roaming\npm\pm2.ps1" 
-      
-      echo "Removendo pasta 'dist' antiga..."
-      Remove-Item -Path "$FRONTEND_DIR/dist" -Recurse -Force -ErrorAction SilentlyContinue
-      
-      # CORRIGIDO: Usa $GITHUB_WORKSPACE para apontar a origem (source) corretamente.
-      cp -r $GITHUB_WORKSPACE/dist $FRONTEND_DIR/
-      
-      cd $BACKEND_DIR
-      
-      & $PM2_PATH startOrRestart ecosystem.config.js --only CriaitorFrontend
-      & $PM2_PATH save
-      
-      echo "Frontend Deployment successful."
+      - name: Deploy Frontend via PM2
+        shell: powershell
+        run: |
+          echo "Deploying Frontend..."
+
+          $FRONTEND_DIR = "E:/Criaitor/projeto-gerador-ideias-frontend"
+          $PM2 = "C:\Users\marco.filho\AppData\Roaming\npm\pm2.ps1"
+          $BUILD_SOURCE = "$env:GITHUB_WORKSPACE/dist"
+
+          echo "Removendo dist antigo..."
+          Remove-Item "$FRONTEND_DIR/dist" -Recurse -Force -ErrorAction SilentlyContinue
+
+          echo "Copiando novo dist..."
+          Copy-Item $BUILD_SOURCE "$FRONTEND_DIR/" -Recurse -Force
+
+          echo "Reiniciando Frontend..."
+          & $PM2 restart CriaitorFrontend 2>$null
+          if ($LASTEXITCODE -ne 0) {
+            & $PM2 start "E:/Criaitor/ecosystem.config.js" --only CriaitorFrontend
+          }
+
+          & $PM2 save
+
+          echo "Frontend deploy finalizado!"
